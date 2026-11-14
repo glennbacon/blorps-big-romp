@@ -2,11 +2,15 @@
 
 A colorful voxel platformer with a 2.5D side-scrolling view, built with [three.js](https://threejs.org/). You play Blorp, a one-eyed teal monster, through three worlds of blocks to bonk, coins to grab and grumpy little monsters to squish. There is no time limit.
 
+**[Play it in your browser](https://glennbacon.github.io/blorps-big-romp/)**
+
 The whole game is one HTML file. There are no image or sound files: every model is built in code from boxes, every texture is drawn on a 16×16 canvas, and all music and sound effects are synthesized with the Web Audio API.
 
 ## Play
 
-Open `index.html` in a current version of Chrome, Safari, Firefox or Edge. Nothing needs installing. An internet connection is needed because three.js and the font load from CDNs.
+Play online at <https://glennbacon.github.io/blorps-big-romp/>.
+
+To run it from a copy of this repository, open `index.html` in a current version of Chrome, Safari, Firefox or Edge. Nothing needs installing. An internet connection is needed either way because three.js and the font load from CDNs.
 
 ## Controls
 
