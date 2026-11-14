@@ -1,7 +1,9 @@
 /* ================= level loading ================= */
 function loadLevel(idx,fromCp){
   disposeWorld();
-  G.levelIdx=idx; L=LEVELS[idx](); W=L.W; tiles=L.tiles; TH=THEMES[L.theme]; M=themeMats(L.theme);
+  G.levelIdx=idx; L=LEVELS[idx](); W=L.W; tiles=L.tiles; M=themeMats(L.theme);
+  /* each level in a world can restyle the sky and light a little, so five levels do not look like one */
+  const base=THEMES[L.theme]; TH=Object.assign({},base,base.looks&&base.looks[L.stage]); GRAV=TH.grav||1;
   applyTheme();
   blockMesh.clear(); multi.clear(); enemies=[]; items=[]; shots=[]; bombs=[]; plats=[]; springs=[]; firebars=[]; bumps=[];
   for(const p of PARTS){ p.life=0; p.mesh.visible=false; }
@@ -9,14 +11,14 @@ function loadLevel(idx,fromCp){
   for(const c of CPOPS){ c.t=-1; c.mesh.visible=false; }
   buildTerrain(); buildBlocks(); buildPipes(); buildSpikes(); buildCoins(); buildLiquid(); buildScenery(); buildGoal(); buildCheckpoint();
   for(const d of L.enemies) spawnEnemy(d);
-  if(L.boss) spawnEnemy({type:'boss',x:L.boss.x,y:L.boss.y,x0:L.boss.x0,x1:L.boss.x1});
+  if(L.boss) spawnEnemy(Object.assign({type:'boss'},L.boss));
   for(const d of L.plats) spawnPlat(d);
   for(const d of L.springs){ const m=vmesh('spring',mSpring); m.position.set(d.x,d.y,0); world.add(m); springs.push({x:d.x,y:d.y,t:0,mesh:m}); }
   for(const d of L.firebars) spawnFirebar(d);
   const s=(fromCp&&L.checkpoint)?L.checkpoint:L.start;
   resetPlayer(s.x,s.y);
   updateCamera(0,true); animate(0,G.time);
-  $('h-level').textContent=L.name;
+  $('h-level').textContent=L.name+' '+L.label;
 }
 
 /* ================= per-frame animation (visual only) ================= */
@@ -65,6 +67,8 @@ function animEnemies(dt,time){
     }
     else if(e.type==='batty'){ u.wl.rotation.z=Math.sin(time*16+e.ox)*0.7; u.wr.rotation.z=-u.wl.rotation.z; m.rotation.y=Math.cos(e.t*e.sp)*0.5; }
     else if(e.type==='boing'){ const s=e.onGround?1-Math.max(0,0.45-e.wait)*0.6:1+clamp(e.vy,-6,8)*0.02, q=1/Math.sqrt(s); m.scale.set(q,s,q); m.rotation.y=(player.x>e.x?1:-1)*0.7; }
+    else if(e.type==='prickle'){ const k=e.aim&&e.throwT<0.4?1+(0.4-e.throwT)*0.6:1; m.scale.set(k,1/k,k); m.rotation.y=(player.x>e.x?1:-1)*0.6; }
+    else if(e.type==='icicle'){ m.rotation.z=e.st===1?Math.sin(time*50)*0.14:0; }
     else if(e.type==='boss'){ m.rotation.y=(player.x>e.x?1:-1)*0.75; m.rotation.z=e.onGround?Math.sin(time*8)*0.05:0; m.visible=!(e.inv>0&&((time*24|0)%2)); }
   }
 }
@@ -95,7 +99,7 @@ function animate(dt,time){
   const bl=(time%3.6)>3.45; if(bl!==blinkOn){ blinkOn=bl; eyeMat.map=bl?texEyeShut:texEyeOpen; }
   if(flagMesh) flagMesh.rotation.y=Math.sin(time*3)*0.18;
   if(cpFlag) cpFlag.rotation.y=Math.sin(time*2.6)*0.22;
-  if(motes){ motes.position.y=Math.sin(time*0.7)*0.35; motes.position.x=Math.sin(time*0.23)*0.8; }
+  if(motes){ const f=motes.userData.fall; motes.position.y=f?-((time*f)%8.5):Math.sin(time*0.7)*0.35; motes.position.x=Math.sin(time*0.23)*0.8; }
   if(sunMesh) sunMesh.rotation.z=Math.sin(time*0.5)*0.06;
 }
 
@@ -110,7 +114,7 @@ function beginLevel(fromCp){
   G.bossSeen=false; G.bossDead=false;
   loadLevel(G.levelIdx,fromCp);
   G.state='card'; G.cardT=1.8; acc=0; input.jumpBuf=0; input.runEdge=false;
-  $('card-n').textContent=G.levelIdx+1; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
+  $('card-eyebrow').textContent='World '+(L.world+1)+' \u00b7 Level '+(L.stage+1)+' of '+L.stages; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
   show('s-card'); musicStop();
 }
 function newGame(level){ G.score=0; G.coins=0; G.lives=3; G.levelIdx=level||0; G.cp=false; player.form=0; beginLevel(false); }
@@ -125,7 +129,8 @@ function afterDeath(){
 }
 function levelClear(){
   G.state='clear';
-  $('clear-n').textContent=G.levelIdx+1; $('clear-name').textContent=L.name; $('clear-score').textContent=G.score; $('clear-coins').textContent=G.coins;
+  $('clear-eyebrow').textContent='Level '+L.label+' clear'; $('clear-name').textContent=L.name; $('clear-score').textContent=G.score; $('clear-coins').textContent=G.coins;
+  $('clear-note').hidden=!L.boss; $('btn-next').textContent=L.stage===L.stages-1?'Next world':'Next level';
   show('s-clear');
 }
 function showWin(){ G.state='win'; $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
@@ -242,7 +247,7 @@ if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,score:G.score,co
 function boot(data){
   layout();
   loadLevel(0,false);
-  if(data&&data.playing){ saved=data; const b=$('btn-continue'); b.hidden=false; b.textContent='Continue world '+(clamp(data.level|0,0,LEVELS.length-1)+1); }
+  if(data&&data.playing){ saved=data; const b=$('btn-continue'); b.hidden=false; b.textContent='Continue at '+LABELS[clamp(data.level|0,0,LEVELS.length-1)]; }
   show('s-title');
   lastT=performance.now();
   requestAnimationFrame(frame);

@@ -129,7 +129,7 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
     <div id="overlay" class="s-title">
       <section class="screen" id="s-title">
         <h1 class="logo"><span class="logo-sm">Blorp's</span><span class="logo-lg"><i>B</i><i>I</i><i>G</i><span class="gap"></span><i>R</i><i>O</i><i>M</i><i>P</i></span></h1>
-        <p class="tag">Three worlds of blocks to bonk, coins to grab and grumpy little monsters to squish.</p>
+        <p class="tag">Six worlds of blocks to bonk, coins to grab and grumpy little monsters to squish.</p>
         <button class="btn" type="button" data-act="start" id="btn-start">Start romping</button>
         <button class="btn quiet" type="button" data-act="continue" id="btn-continue" hidden>Continue</button>
         <ul class="howto">
@@ -143,7 +143,7 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
       </section>
 
       <section class="screen card" id="s-card" hidden>
-        <p class="eyebrow">World <span id="card-n">1</span> of 3</p>
+        <p class="eyebrow" id="card-eyebrow">World 1 &middot; Level 1 of 5</p>
         <h2 id="card-name">Gumdrop Meadow</h2>
         <p class="lifeline"><svg class="ico" viewBox="0 0 8 8" aria-hidden="true"><rect x="1" y="2" width="6" height="6" fill="#2fd6c3"/><rect x="1" y="0" width="1" height="2" fill="#e0a800"/><rect x="6" y="0" width="1" height="2" fill="#e0a800"/><rect x="2.5" y="3" width="3" height="3" fill="#fff"/><rect x="3.5" y="4" width="1.5" height="1.5" fill="#1c1233"/></svg><span>&times; <span id="card-lives">3</span></span></p>
       </section>
@@ -151,7 +151,7 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
       <section class="screen card" id="s-pause" hidden>
         <h2>Paused</h2>
         <button class="btn" type="button" data-act="resume">Keep romping</button>
-        <button class="btn quiet" type="button" data-act="restart">Restart this world</button>
+        <button class="btn quiet" type="button" data-act="restart">Restart this level</button>
         <ul class="howto">
           <li class="kbd-only"><b>Arrows</b> or <b>A D</b> move</li>
           <li class="kbd-only"><b>Space</b> jump</li>
@@ -163,20 +163,21 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
       </section>
 
       <section class="screen card" id="s-clear" hidden>
-        <p class="eyebrow">World <span id="clear-n">1</span> clear</p>
+        <p class="eyebrow" id="clear-eyebrow">Level 1-1 clear</p>
         <h2 id="clear-name">Gumdrop Meadow</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="clear-score">0</dd></div><div><dt>Coins</dt><dd id="clear-coins">0</dd></div></dl>
-        <button class="btn" type="button" data-act="next">Next world</button>
+        <p id="clear-note" hidden>King Grump scarpers off to his Comet Citadel.</p>
+        <button class="btn" type="button" data-act="next" id="btn-next">Next level</button>
       </section>
 
       <section class="screen card" id="s-over" hidden>
         <h2>Game over</h2>
-        <p>Blorp is out of lives. The score resets, the world does not.</p>
-        <button class="btn" type="button" data-act="retry">Try this world again</button>
+        <p>Blorp is out of lives. The score resets, the level does not.</p>
+        <button class="btn" type="button" data-act="retry">Try this level again</button>
       </section>
 
       <section class="screen card" id="s-win" hidden>
-        <p class="eyebrow">All 3 worlds clear</p>
+        <p class="eyebrow">All 6 worlds clear</p>
         <h2>King Grump is toast</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="win-score">0</dd></div><div><dt>Coins</dt><dd id="win-coins">0</dd></div></dl>
         <button class="btn" type="button" data-act="again">Play again</button>

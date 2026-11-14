@@ -53,6 +53,8 @@ const sfx={
   clear(){ jingle('square','G4 C5 E5 G5 C6 E6 G6 . E6 . G6',0.1,0.12,0.2); jingle('triangle','C3 . G3 . C4 . G3 . C4 . C3',0.1,0.3,0.2); },
   over(){ jingle('triangle','C5 . G4 . E4 . A4 B4 A4 Ab4 Bb4 Ab4 G4',0.13,0.3,0.22); },
   bossHit(){ tone('sawtooth',300,70,0.3,0.2); hiss(0.15,0.2,0,300); },
+  spit(){ tone('square',300,640,0.09,0.09); },
+  shatter(){ hiss(0.12,0.2,0,2500); tone('square',1500,700,0.08,0.06); },
   win(){ jingle('square','C5 C5 C5 E5 G5 . E5 G5 C6 . C6 E6 G6 . . C7',0.11,0.12,0.24); jingle('triangle','C3 . . C3 G3 . . G3 C4 . . E4 G4 . . C4',0.11,0.3,0.24); }
 };
 
@@ -78,8 +80,24 @@ const SONGS={
     'D5 D5 . D5 F5 . A5 .  G5 F5 E5 F5 D5 - . .  D5 D5 . D5 F5 . Bb5 .  A5 G5 F5 G5 A5 - . . '+
     'G5 G5 . G5 Bb5 . D6 .  C6 Bb5 A5 Bb5 G5 - . .  A5 . C#6 . E6 . C#6 .  A5 C#6 E6 C#6 A5 E5 A5 .',
     'D3 D3 D3 D3 D3 D3 A2 A2  D3 D3 D3 D3 D3 D3 A2 A2  Bb2 Bb2 Bb2 Bb2 Bb2 Bb2 F3 F3  Bb2 Bb2 Bb2 Bb2 Bb2 Bb2 F3 F3 '+
-    'G2 G2 G2 G2 G2 G2 D3 D3  G2 G2 G2 G2 G2 G2 D3 D3  A2 A2 A2 A2 A2 A2 E3 E3  A2 A2 A2 A2 A2 C#3 E3 A3')
+    'G2 G2 G2 G2 G2 G2 D3 D3  G2 G2 G2 G2 G2 G2 D3 D3  A2 A2 A2 A2 A2 A2 E3 E3  A2 A2 A2 A2 A2 C#3 E3 A3'),
+  snow:song(132,'sine',
+    'C6 . A5 . F5 . A5 C6  D6 - C6 . A5 - . .  A5 . F5 . D5 . F5 A5  C6 - A5 . F5 - . . '+
+    'D6 . Bb5 . F5 . Bb5 D6  F6 - D6 . Bb5 . D6 .  E6 . C6 . G5 . C6 E6  G6 - E6 C6 G5 C6 E6 G6',
+    'F2 . C3 . F2 . C3 .  F2 . C3 . F2 . C3 .  D3 . A2 . D3 . A2 .  D3 . A2 . D3 . A2 . '+
+    'Bb2 . F3 . Bb2 . F3 .  Bb2 . F3 . Bb2 . F3 .  C3 . G2 . C3 . G2 .  C3 . G2 . C3 E3 G3 C3'),
+  dunes:song(138,'square',
+    'D5 . F#5 G5 A5 . G5 F#5  Eb5 - D5 . D5 - . .  Eb5 . G5 A5 Bb5 . A5 G5  F#5 - Eb5 . D5 - . . '+
+    'G5 . Bb5 . D6 . C6 Bb5  A5 - G5 . Bb5 - A5 .  G5 . Eb5 . Bb5 A5 G5 F#5  Eb5 D5 F#5 A5 D6 - . .',
+    'D3 . D3 A2 D3 . A2 .  D3 . D3 A2 D3 . A2 .  Eb3 . Eb3 Bb2 Eb3 . Bb2 .  D3 . D3 A2 D3 . A2 . '+
+    'G2 . G2 D3 G2 . D3 .  G2 . G2 D3 G2 . D3 .  Eb3 . Eb3 Bb2 Eb3 . Bb2 .  D3 . A2 . D3 F#3 A3 D3'),
+  citadel:song(156,'sawtooth',
+    'E5 . G5 B5 E6 . B5 G5  F#5 - G5 . E5 - . .  C5 . E5 G5 C6 . G5 E5  D5 - E5 . G5 - . . '+
+    'A5 . C6 E6 A5 . C6 E6  G6 - E6 . C6 - A5 .  B5 . D#6 . F#6 . D#6 .  B5 D#6 F#6 B6 F#6 D#6 B5 .',
+    'E2 E2 E3 E2 E2 E2 E3 E2  E2 E2 E3 E2 E2 E2 E3 E2  C3 C3 C3 C3 C3 C3 G2 G2  C3 C3 C3 C3 C3 C3 G2 G2 '+
+    'A2 A2 A2 A2 A2 A2 E3 E3  A2 A2 A2 A2 A2 A2 E3 E3  B2 B2 B2 B2 B2 B2 F#3 F#3  B2 B2 B2 B2 B2 D#3 F#3 B3')
 };
+const LEAD_VOL={square:0.07,sawtooth:0.05,triangle:0.2,sine:0.22};
 const mus={song:null,step:0,next:0,timer:0,rate:1,paused:false};
 function musicTick(){
   const ac=AU.ac, s=mus.song; if(!ac||!s||ac.state!=='running') return;
@@ -88,7 +106,7 @@ function musicTick(){
   const sd=60/s.bpm/2/mus.rate;
   while(mus.next<ac.currentTime+0.18){
     const i=mus.step%s.lead.length, l=s.lead[i], b=s.bass[i%s.bass.length];
-    if(l) voice(s.wave,l.f,0,mus.next,sd*l.d*0.9,s.wave==='square'?0.07:0.2,AU.mg);
+    if(l) voice(s.wave,l.f,0,mus.next,sd*l.d*0.9,LEAD_VOL[s.wave],AU.mg);
     if(b) voice('triangle',b.f,0,mus.next,sd*b.d*0.85,0.26,AU.mg);
     mus.step++; mus.next+=sd;
   }

@@ -149,13 +149,15 @@ function updatePlayer(dt){
 
   const dir=(input.right?1:0)-(input.left?1:0), run=input.run, maxV=run?RUN_MAX:WALK_MAX;
   if(p.onGround){
+    /* on ice Blorp speeds up slowly and barely slows down */
+    const ice=tileAt(Math.floor(p.x),Math.floor(p.y-0.5))===ICE, grip=ice?0.14:1, push=ice?0.55:1;
     if(dir){
-      if(p.vx*dir<-0.01){ p.vx+=dir*SKID_DEC*dt; p.skid=Math.abs(p.vx)>1.5; }
+      if(p.vx*dir<-0.01){ p.vx+=dir*SKID_DEC*(ice?0.3:1)*dt; p.skid=Math.abs(p.vx)>1.5; }
       else { p.skid=false; if(Math.abs(p.vx)<MIN_V) p.vx=dir*MIN_V;
-        if(Math.abs(p.vx)<=maxV){ p.vx+=dir*(run?RUN_ACC:WALK_ACC)*dt; if(Math.abs(p.vx)>maxV) p.vx=dir*maxV; }
-        else { p.vx-=dir*REL_DEC*dt; if(Math.abs(p.vx)<maxV) p.vx=dir*maxV; } }
+        if(Math.abs(p.vx)<=maxV){ p.vx+=dir*(run?RUN_ACC:WALK_ACC)*push*dt; if(Math.abs(p.vx)>maxV) p.vx=dir*maxV; }
+        else { p.vx-=dir*REL_DEC*grip*dt; if(Math.abs(p.vx)<maxV) p.vx=dir*maxV; } }
       p.face=dir;
-    } else { p.skid=false; const s=Math.abs(p.vx)-REL_DEC*dt; p.vx=s>0?sgn(p.vx)*s:0; }
+    } else { p.skid=false; const s=Math.abs(p.vx)-REL_DEC*grip*dt; p.vx=s>0?sgn(p.vx)*s:0; }
   } else if(dir){
     p.vx+=dir*((p.vx*dir<0||Math.abs(p.vx)>=WALK_MAX)?RUN_ACC:WALK_ACC)*dt;
     if(Math.abs(p.vx)>p.airMax) p.vx=sgn(p.vx)*p.airMax;
@@ -169,7 +171,7 @@ function updatePlayer(dt){
   if(input.runEdge){ input.runEdge=false; if(p.form===2&&p.fireCool<=0) shoot(); }
 
   const hold=p.vy>0&&(p.springHold||(p.jumping&&input.jump));
-  p.vy-=(hold?p.gHold:p.gFall)*dt; if(p.vy<=0) p.springHold=false; if(p.vy<-MAX_FALL) p.vy=-MAX_FALL;
+  p.vy-=(hold?p.gHold:p.gFall)*GRAV*dt; if(p.vy<=0) p.springHold=false; if(p.vy<-MAX_FALL) p.vy=-MAX_FALL;
 
   /* a tall Blorp who ends up inside a low gap is nudged out instead of sticking */
   if(p.form>0&&solidAt(Math.floor(p.x),Math.floor(p.y+p.h-0.25))){ p.x+=p.face*3*dt; p.vx=0; }
@@ -211,7 +213,9 @@ function spawnEnemy(d){
   else if(d.type==='batty'){ e.ox=d.x; e.oy=d.y; e.rx=d.rx||3; e.ry=d.ry||1; e.sp=d.sp||1.3; e.h=0.7; e.fly=true; }
   else if(d.type==='boing') e.wait=0.8;
   else if(d.type==='chomper'){ e.top=d.y; e.h=1.3; e.ext=0; e.ph=Math.random(); e.cy=0; e.stomp=false; e.fly=true; }
-  else if(d.type==='boss'){ e.w=2.2; e.h=2.4; e.hp=9; e.inv=0; e.jumpT=2.2; e.throwT=1.6; e.x0=d.x0; e.x1=d.x1; e.vx=-1.4; e.t=0; }
+  else if(d.type==='prickle'){ e.h=1.3; e.stomp=false; e.throwT=1+Math.random()*1.5; e.aim=false; }
+  else if(d.type==='icicle'){ e.w=0.6; e.h=1; e.stomp=false; e.fly=true; e.st=0; e.shakeT=0; }
+  else if(d.type==='boss'){ e.w=2.2; e.h=2.4; e.hp=d.hp||9; e.hp0=e.hp; e.inv=0; e.jumpT=2.2; e.throwT=1.6; e.x0=d.x0; e.x1=d.x1; e.vx=-1.4; e.t=0; }
   e.mesh=makeEnemy(d.type); e.mesh.position.set(e.x,e.type==='chomper'?e.top-1.55:e.y,0); world.add(e.mesh); enemies.push(e); return e;
 }
 function killEnemy(e,how,dir){
@@ -231,6 +235,10 @@ function fromShell(e){ e.shell=false; e.vx=player.x<e.x?-1.7:1.7; e.h=0.9; const
 function throwBomb(e){
   const p=player, m=vmesh('bomb',mBomb); m.scale.setScalar(1.15); world.add(m);
   bombs.push({x:e.x,y:e.y+e.h,vx:clamp((p.x-e.x)/1.05,-9,9),vy:11,mesh:m,gone:false}); sfx.fire();
+}
+function throwSeed(e){
+  const p=player, m=vmesh('seed',mSeed); world.add(m);
+  bombs.push({x:e.x,y:e.y+e.h+0.2,vx:clamp(p.x-e.x,-7,7),vy:9.5,mesh:m,gone:false}); if(Math.abs(e.x-camX)<viewHalfW+1) sfx.spit();
 }
 function damageBoss(e,n){
   if(e.inv>0||e.dead) return;
@@ -263,6 +271,18 @@ function updateEnemies(dt){
       }
     }
     else if(e.type==='batty'){ e.x=e.ox+Math.sin(e.t*e.sp)*e.rx; e.y=e.oy+Math.sin(e.t*e.sp*2)*e.ry; }
+    else if(e.type==='prickle'){
+      /* stays put and lobs a seed at Blorp every few seconds */
+      walk(e,dt); e.aim=Math.abs(p.x-e.x)<10&&!p.dead&&!p.goal;
+      e.throwT-=dt; if(e.throwT<=0){ if(e.aim){ e.throwT=2.6; throwSeed(e); } else e.throwT=0.5; }
+    }
+    else if(e.type==='icicle'){
+      /* hangs until Blorp walks underneath, wobbles, then drops and shatters */
+      if(e.st===0){ if(Math.abs(p.x-e.x)<1.8&&p.y<e.y&&!p.dead){ e.st=1; e.shakeT=0.3; } }
+      else if(e.st===1){ e.shakeT-=dt; if(e.shakeT<=0) e.st=2; }
+      else { e.vy-=40*dt; if(e.vy<-MAX_FALL) e.vy=-MAX_FALL; const py=e.y; e.y+=e.vy*dt; const tx=Math.floor(e.x), ty=Math.floor(e.y);
+        if(solidAt(tx,ty)||(semiAt(tx,ty)&&py>=ty+0.999)){ e.gone=true; burst(e.x,ty+1.1,'#dcf6ff',8,4,0.12,0.4); if(Math.abs(e.x-camX)<viewHalfW) sfx.shatter(); } }
+    }
     else if(e.type==='boing'){
       if(e.onGround){ e.vx=0; e.wait-=dt; if(e.wait<=0){ e.vy=13; e.vx=(p.x<e.x?-1:1)*2.6; e.wait=1+Math.random()*0.7; e.onGround=false; } }
       const vx=e.vx; walk(e,dt); if(!e.onGround&&e.vx===-vx&&vx) e.vx=0;
@@ -276,7 +296,7 @@ function updateEnemies(dt){
     }
     else if(e.type==='boss'){
       e.inv=Math.max(0,e.inv-dt);
-      const rage=(9-e.hp)/9;
+      const rage=(e.hp0-e.hp)/e.hp0;
       if(e.onGround){
         e.vx+=((p.x<e.x?-1:1)*(1.5+rage*1.7)-e.vx)*Math.min(1,dt*3);
         e.jumpT-=dt; if(e.jumpT<=0){ e.vy=13+rage*3; e.jumpT=2.5-rage+Math.random()*0.7; e.onGround=false; }
@@ -402,6 +422,6 @@ function step(dt){
   if(G.bossDead){
     G.winT+=dt; G.fountain-=dt;
     if(G.winT<1.8&&G.fountain<=0){ G.fountain=0.09; coinPop(G.bossX+(Math.random()-0.5)*5,2.2+Math.random()*2); addCoin(); G.score+=200; sfx.coin(); }
-    if(G.winT>4&&!player.dead){ G.bossDead=false; showWin(); }
+    if(G.winT>4&&!player.dead){ G.bossDead=false; if(G.levelIdx>=LEVELS.length-1) showWin(); else levelClear(); }
   }
 }
