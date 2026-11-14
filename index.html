@@ -1425,13 +1425,15 @@ function skyDisc(d,ring,y){
   sunMesh=new T.Mesh(tmpGeo(voxGeo(s,1)),new T.MeshBasicMaterial({vertexColors:true,fog:false})); sunMesh.material.userData.tmp=true; sunMesh.position.set(0,y||13,-62); world.add(sunMesh);
 }
 function laneDecor(R,near,glow){
-  const th=L.theme;
+  const th=L.theme, cpX=L.checkpoint?L.checkpoint.x:-99, hutX=L.goal?L.goal.x+HUT_DX+1.5:-99; /* the middles of the checkpoint and the hut */
   for(let x=1;x<W-1;x++){
     let ty=-1; for(let y=0;y<8;y++){ if(tiles[y*W+x]===GROUND&&tiles[(y+1)*W+x]!==GROUND){ ty=y+1; break; } }
     if(ty<0) continue;
     const free=h=>{ for(let k=0;k<h;k++){ const id=tiles[(ty+k)*W+x]; if(id===GROUND||id===HARD||id===PIPE||id===ICE) return false; } return true; };
     if(!free(1)) continue;
-    let clearSky=true; for(let dx=-2;dx<=2&&clearSky;dx++) for(let k=0;k<8;k++){ const id=tileAt(x+dx,ty+k); if(id===BRICK||id===QBLOCK||id===SEMI||id===HIDDEN||id===COIN||id===PIPE){ clearSky=false; break; } }
+    /* tall props keep clear of blocks, coins and ledges; of the checkpoint, whose flag stands further back than a
+       canopy reaches; and of the hut after the flag, which they would poke out of */
+    let clearSky=Math.abs(x+0.5-cpX)>=4&&Math.abs(x+0.5-hutX)>=3.5; for(let dx=-2;dx<=2&&clearSky;dx++) for(let k=0;k<8;k++){ const id=tileAt(x+dx,ty+k); if(id===BRICK||id===QBLOCK||id===SEMI||id===HIDDEN||id===COIN||id===PIPE){ clearSky=false; break; } }
     const r=R(), jx=x*8+2+R()*4, zb=-19+R()*5, zf=9.5+R()*1.5;
     if(th==='meadow'){
       if(r<0.13&&free(5)&&clearSky) put(near,dTree(pick(R,CANDY)),jx,ty*8,-16);
@@ -1541,20 +1543,22 @@ function buildScenery(){
   if(glow.length) world.add(new T.Mesh(tmpGeo(voxGeo(glow)),MAT.glow));
   if(glowFar.length) world.add(new T.Mesh(tmpGeo(voxGeo(glowFar,1)),MAT.glow));
 }
+const HUT_DX=5, HUT_Z=-12; /* the hut after the flag: how many tiles past the pole it starts, and its depth in 1/8 tiles */
 function buildGoal(){
   flagMesh=null; if(!L.goal) return;
   const gx=L.goal.x, b=[];
   for(let i=0;i<18;i++) b.push([gx*8+3.4,24+i*4,-0.6,1.2,4,1.2,i%2?WHITE:'#ff4f7b']);
   b.push([gx*8+2.4,96,-1.6,3.2,3.2,3.2,'#ffc928']);
-  put(b,mHut(),(gx+5)*8,16,-12);
+  put(b,mHut(),(gx+HUT_DX)*8,16,HUT_Z);
   world.add(new T.Mesh(tmpGeo(voxGeo(b)),MAT.vox));
   flagMesh=vmesh('flag',()=>[[-12,0,-0.3,12,8,0.6,'#2fd6c3'],[-8.6,2,0.3,5,4,0.2,WHITE],[-7,3,0.5,2,2,0.15,INK],[-8.6,2,-0.5,5,4,0.2,WHITE]]);
   flagMesh.position.set(gx+0.43,10.8,0); world.add(flagMesh);
 }
+const CP_Z=-1.4; /* how far behind the walkway the checkpoint flag stands */
 function buildCheckpoint(){
   cpFlag=null; if(!L.checkpoint) return;
   const c=L.checkpoint;
-  const post=vmesh('cppost',()=>[[-0.6,0,-0.6,1.2,15,1.2,'#fff2c2'],[-1.2,15,-1.2,2.4,2,2.4,'#ffc928'],[-2,0,-2,4,1,4,'#b9773f']]); post.position.set(c.x,c.y,-1.4); world.add(post);
+  const post=vmesh('cppost',()=>[[-0.6,0,-0.6,1.2,15,1.2,'#fff2c2'],[-1.2,15,-1.2,2.4,2,2.4,'#ffc928'],[-2,0,-2,4,1,4,'#b9773f']]); post.position.set(c.x,c.y,CP_Z); world.add(post);
   const m=new T.MeshLambertMaterial({vertexColors:true,color:G.cp?0x2fd6c3:0xb9b4c6}); m.userData.tmp=true;
   cpFlag=new T.Mesh(geo('cpflag',()=>[[0.6,9,-0.3,7,5,0.6,WHITE],[2.6,10.4,0.3,3,2.4,0.15,INK],[3.6,11,0.45,1,1,0.1,WHITE]]),m); cpFlag.position.copy(post.position); world.add(cpFlag);
 }
