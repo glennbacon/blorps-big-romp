@@ -155,6 +155,7 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <h2>Paused</h2>
         <button class="btn" type="button" data-act="resume">Keep romping</button>
         <button class="btn quiet" type="button" data-act="restart">Restart this level</button>
+        <button class="btn quiet" type="button" data-act="map">Back to the map</button>
         <ul class="howto">
           <li class="kbd-only"><b>Arrows</b> or <b>A D</b> move</li>
           <li class="kbd-only"><b>Space</b> jump</li>
@@ -170,20 +171,20 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <h2 id="clear-name">Gumdrop Meadow</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="clear-score">0</dd></div><div><dt>Coins</dt><dd id="clear-coins">0</dd></div></dl>
         <p id="clear-note" hidden>King Grump scarpers off to his Comet Citadel.</p>
-        <button class="btn" type="button" data-act="next" id="btn-next">Next level</button>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
 
       <section class="screen card" id="s-over" hidden>
         <h2>Game over</h2>
-        <p>Blorp is out of lives. The score resets, the level does not.</p>
-        <button class="btn" type="button" data-act="retry">Try this level again</button>
+        <p>Blorp is out of lives. The score resets, the map does not.</p>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
 
       <section class="screen card" id="s-win" hidden>
         <p class="eyebrow">All 6 worlds clear</p>
         <h2>King Grump is toast</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="win-score">0</dd></div><div><dt>Coins</dt><dd id="win-coins">0</dd></div></dl>
-        <button class="btn" type="button" data-act="again">Play again</button>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
     </div>
 

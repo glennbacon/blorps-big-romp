@@ -173,6 +173,42 @@ const checks=[
     assert.deepStrictEqual([0,1,2,3].map(i=>m.mapMarkState(i)),[2,2,1,0]);
     assert.strictEqual(m.mapSegShown(1),m.MAPSEGS[1].length); assert.strictEqual(m.mapSegShown(2),0);
     m.G.open=m.LEVELS.length; assert.strictEqual(m.mapMarkState(m.LEVELS.length-1),2);
+  }],
+  ['choosing a marker starts that level',()=>{
+    const m=game(); m.act('start'); m.G.open=4; m.mapPlace(2);
+    assert.strictEqual(m.mapEnter(),true); assert.deepStrictEqual([m.G.state,m.G.levelIdx],['card',2]);
+  }],
+  ['a level cannot be chosen mid-walk or while a path is appearing',()=>{
+    const m=game(); m.act('start'); m.G.open=4; m.mapPlace(0);
+    m.mapGo(m.mapDirAt(0).fwd); m.mapTick(1/60,null,false);
+    assert.strictEqual(m.mapEnter(),false); assert.strictEqual(m.G.state,'map');
+    settle(m); m.mapReveal(2);
+    assert.strictEqual(m.mapEnter(),false); assert.strictEqual(m.G.state,'map');
+  }],
+  ['a level cannot be chosen from anywhere but the map',()=>{
+    const m=game(); assert.strictEqual(m.mapEnter(),false); assert.strictEqual(m.G.state,'title');
+  }],
+  ['back on the map after a first clear, the next stretch of path appears',()=>{
+    const m=game(); m.act('start'); m.mapEnter(); m.levelClear(); m.primaryAction();
+    assert.deepStrictEqual([m.G.state,m.MAPST.at,m.MAPST.reveal&&m.MAPST.reveal.seg],['map',0,0]);
+    settle(m,null,1/30); assert.strictEqual(m.mapMarkState(1),1); assert.strictEqual(go(m,m.mapDirAt(0).fwd),'go');
+  }],
+  ['back on the map after clearing a level again, nothing appears',()=>{
+    const m=game(); m.act('start'); m.G.open=5; m.mapPlace(2); m.mapEnter(); m.levelClear(); m.act('map');
+    assert.deepStrictEqual([m.G.state,m.MAPST.at,m.MAPST.reveal,m.G.open],['map',2,null,5]);
+  }],
+  ['after the last level there is no more path to appear, and its marker reads as cleared',()=>{
+    const m=game(), last=m.LEVELS.length-1; m.act('start'); m.G.open=last; m.mapPlace(last); m.mapEnter(); m.showWin(); m.primaryAction();
+    assert.deepStrictEqual([m.G.state,m.MAPST.at,m.MAPST.reveal,m.mapMarkState(last)],['map',last,null,2]);
+  }],
+  ['leaving a level from the pause screen keeps lives, coins, score and form, and clears nothing',()=>{
+    const m=game(); m.act('start'); m.mapEnter(); m.G.state='play'; m.G.score=900; m.G.coins=5; m.G.lives=2; m.player.form=1;
+    m.togglePause(); assert.strictEqual(m.G.state,'pause'); m.act('map');
+    assert.deepStrictEqual([m.G.state,m.G.score,m.G.coins,m.G.lives,m.player.form,m.G.open,m.MAPST.reveal],['map',900,5,2,1,0,null]);
+  }],
+  ['arriving at a marker saves where Blorp stands',()=>{
+    const s=storage(), m=game(s); m.act('start'); m.G.open=3; go(m,m.mapDirAt(0).fwd);
+    assert.strictEqual(saved(s).level,1); assert.strictEqual(m.G.levelIdx,1);
   }]
 ];
 

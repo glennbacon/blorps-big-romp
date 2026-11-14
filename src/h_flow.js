@@ -1,14 +1,19 @@
 /* ================= level loading ================= */
-function loadLevel(idx,fromCp){
+/* Throw away whatever level is loaded: its meshes, its lists, and any effects still in the air. */
+function unloadLevel(){
   disposeWorld();
+  blockMesh.clear(); multi.clear(); enemies=[]; items=[]; shots=[]; bombs=[]; plats=[]; springs=[]; firebars=[]; bumps=[];
+  coinMesh=null; liquidTex=null; sunMesh=null; flagMesh=null; cpFlag=null; motes=null;
+  for(const p of PARTS){ p.life=0; p.mesh.visible=false; }
+  for(const s of POPS){ s.life=0; s.sp.visible=false; }
+  for(const c of CPOPS){ c.t=-1; c.mesh.visible=false; }
+}
+function loadLevel(idx,fromCp){
+  unloadLevel();
   G.levelIdx=idx; L=LEVELS[idx](); W=L.W; tiles=L.tiles; M=themeMats(L.theme);
   /* each level in a world can restyle the sky and light a little, so five levels do not look like one */
   const base=THEMES[L.theme]; TH=Object.assign({},base,base.looks&&base.looks[L.stage]); GRAV=TH.grav||1;
   applyTheme();
-  blockMesh.clear(); multi.clear(); enemies=[]; items=[]; shots=[]; bombs=[]; plats=[]; springs=[]; firebars=[]; bumps=[];
-  for(const p of PARTS){ p.life=0; p.mesh.visible=false; }
-  for(const s of POPS){ s.life=0; s.sp.visible=false; }
-  for(const c of CPOPS){ c.t=-1; c.mesh.visible=false; }
   buildTerrain(); buildBlocks(); buildPipes(); buildSpikes(); buildCoins(); buildLiquid(); buildScenery(); buildGoal(); buildCheckpoint();
   for(const d of L.enemies) spawnEnemy(d);
   if(L.boss) spawnEnemy(Object.assign({type:'boss'},L.boss));
@@ -72,6 +77,15 @@ function animEnemies(dt,time){
     else if(e.type==='boss'){ m.rotation.y=(player.x>e.x?1:-1)*0.75; m.rotation.z=e.onGround?Math.sin(time*8)*0.05:0; m.visible=!(e.inv>0&&((time*24|0)%2)); }
   }
 }
+/* the pooled effects: flying bits, score pop-ups and coins from blocks. The map uses them too. */
+function animFx(dt){
+  for(const p of PARTS){ if(p.life<=0) continue; p.life-=dt; if(p.life<=0){ p.mesh.visible=false; continue; }
+    p.vy-=p.grav*dt; const m=p.mesh; m.position.x+=p.vx*dt; m.position.y+=p.vy*dt; m.position.z+=p.vz*dt; m.rotation.x+=dt*8; m.rotation.z+=dt*6; m.scale.setScalar(p.size*Math.min(1,p.life/p.max*2)); }
+  for(const s of POPS){ if(s.life<=0) continue; s.life-=dt; if(s.life<=0){ s.sp.visible=false; continue; } s.sp.position.y+=dt*1.5; s.sp.material.opacity=Math.min(1,s.life*4); }
+  for(const c of CPOPS){ if(c.t<0) continue; c.t+=dt;
+    if(c.t>0.55){ c.t=-1; c.mesh.visible=false; popup(c.x,c.y+1.1,'200','#ffe14d'); continue; }
+    c.mesh.position.set(c.x,c.y+13*c.t-20*c.t*c.t,0); c.mesh.rotation.y=c.t*26; }
+}
 function animate(dt,time){
   animPlayer(dt,time); animEnemies(dt,time);
   for(const it of items){ it.mesh.position.set(it.x,it.y,0);
@@ -89,12 +103,7 @@ function animate(dt,time){
       _d.updateMatrix(); coinMesh.setMatrixAt(i,_d.matrix); }
     coinMesh.instanceMatrix.needsUpdate=true;
   }
-  for(const p of PARTS){ if(p.life<=0) continue; p.life-=dt; if(p.life<=0){ p.mesh.visible=false; continue; }
-    p.vy-=p.grav*dt; const m=p.mesh; m.position.x+=p.vx*dt; m.position.y+=p.vy*dt; m.position.z+=p.vz*dt; m.rotation.x+=dt*8; m.rotation.z+=dt*6; m.scale.setScalar(p.size*Math.min(1,p.life/p.max*2)); }
-  for(const s of POPS){ if(s.life<=0) continue; s.life-=dt; if(s.life<=0){ s.sp.visible=false; continue; } s.sp.position.y+=dt*1.5; s.sp.material.opacity=Math.min(1,s.life*4); }
-  for(const c of CPOPS){ if(c.t<0) continue; c.t+=dt;
-    if(c.t>0.55){ c.t=-1; c.mesh.visible=false; popup(c.x,c.y+1.1,'200','#ffe14d'); continue; }
-    c.mesh.position.set(c.x,c.y+13*c.t-20*c.t*c.t,0); c.mesh.rotation.y=c.t*26; }
+  animFx(dt);
   if(liquidTex) liquidTex.offset.x=time*0.12;
   const bl=(time%3.6)>3.45; if(bl!==blinkOn){ blinkOn=bl; eyeMat.map=bl?texEyeShut:texEyeOpen; }
   if(flagMesh) flagMesh.rotation.y=Math.sin(time*3)*0.18;
@@ -110,26 +119,30 @@ function show(id){
   for(const s of ov.querySelectorAll('.screen')) s.hidden=s.id!==id;
   if(id&&!isTouch){ const b=$(id).querySelector('.btn'); if(b){ try{ b.focus({preventScroll:true}); }catch(e){} } }
 }
-/* Progress is kept in the browser so "Continue" on the title screen can pick it up after the page is closed.
+/* Progress is kept in the browser so "Continue" on the title screen can pick it up after the page is closed:
+   `level` is the marker Blorp stands on and `open` the furthest level opened (see f_map.js).
    Storage can be missing or blocked (private windows, embedded pages), so every use is allowed to fail quietly. */
 const SAVE_KEY='blorps-big-romp.save';
 function writeSave(level,fresh){
-  const d=fresh?{level,score:0,coins:0,lives:3,form:0}:{level,score:G.score,coins:G.coins,lives:G.lives,form:player.form};
+  const d=fresh?{level,open:G.open,score:0,coins:0,lives:3,form:0}:{level,open:G.open,score:G.score,coins:G.coins,lives:G.lives,form:player.form};
   try{ window.localStorage.setItem(SAVE_KEY,JSON.stringify(d)); }catch(e){}
 }
-function clearSave(){ try{ window.localStorage.removeItem(SAVE_KEY); }catch(e){} }
-function readSave(){
-  try{ const d=JSON.parse(window.localStorage.getItem(SAVE_KEY)); if(d&&Number.isInteger(d.level)&&d.level>=0&&d.level<LEVELS.length) return d; }catch(e){}
-  return null;
+/* Make sense of something that claims to be a save, or return null. A save from before the map has no `open`:
+   everything up to its level counts as open. One whose `open` cannot be right is read the same way. */
+function checkSave(d){
+  if(!d||!Number.isInteger(d.level)||d.level<0||d.level>=LEVELS.length) return null;
+  if(!Number.isInteger(d.open)||d.open<d.level||d.open>LEVELS.length) d.open=d.level;
+  return d;
 }
+function readSave(){ try{ return checkSave(JSON.parse(window.localStorage.getItem(SAVE_KEY))); }catch(e){} return null; }
 function beginLevel(fromCp){
   G.bossSeen=false; G.bossDead=false;
+  mapMode(false);
   loadLevel(G.levelIdx,fromCp); writeSave(G.levelIdx);
   G.state='card'; G.cardT=1.8; acc=0; input.jumpBuf=0; input.runEdge=false;
   $('card-eyebrow').textContent='World '+(L.world+1)+' \u00b7 Level '+(L.stage+1)+' of '+L.stages; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
   show('s-card'); musicStop();
 }
-function newGame(level){ G.score=0; G.coins=0; G.lives=3; G.levelIdx=level||0; G.cp=false; player.form=0; beginLevel(false); }
 function togglePause(){
   if(G.state==='play'){ G.state='pause'; show('s-pause'); musicPause(true); sfx.pause(); }
   else if(G.state==='pause'){ G.state='play'; show(null); musicPause(false); acc=0; }
@@ -139,24 +152,33 @@ function afterDeath(){
   if(G.lives<=0){ G.state='over'; writeSave(G.levelIdx,true); show('s-over'); sfx.over(); }
   else beginLevel(G.cp);
 }
+/* Clearing a level for the first time opens the next one. The new stretch of path is shown appearing once Blorp is
+   back on the map; after the last level there is no more path to show. */
+let newPath=-1;
 function levelClear(){
-  G.state='clear'; writeSave(Math.min(G.levelIdx+1,LEVELS.length-1));
+  const first=G.levelIdx>=G.open; if(first) G.open=G.levelIdx+1;
+  newPath=first&&G.levelIdx<MAPSEGS.length?G.levelIdx:-1;
+  G.state='clear'; writeSave(G.levelIdx);
   $('clear-eyebrow').textContent='Level '+L.label+' clear'; $('clear-name').textContent=L.name; $('clear-score').textContent=G.score; $('clear-coins').textContent=G.coins;
-  $('clear-note').hidden=!L.boss; $('btn-next').textContent=L.stage===L.stages-1?'Next world':'Next level';
+  $('clear-note').hidden=!L.boss;
   show('s-clear');
 }
-function showWin(){ G.state='win'; clearSave(); $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
+/* Beating the last level opens nothing new, but it still counts: `open` runs one past the end so its marker reads as cleared. */
+function showWin(){ G.open=LEVELS.length; newPath=-1; G.state='win'; writeSave(G.levelIdx); $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
 function act(a){
   auInit();
-  if(a==='start'||a==='again') newGame(0);
-  else if(a==='continue'&&saved){ G.score=saved.score|0; G.coins=saved.coins|0; G.lives=Math.max(1,saved.lives|0); G.levelIdx=clamp(saved.level|0,0,LEVELS.length-1); G.cp=false; player.form=clamp(saved.form|0,0,2); beginLevel(false); }
+  if(a==='start'){ G.score=0; G.coins=0; G.lives=3; G.open=0; G.levelIdx=0; player.form=0; showMap(-1); }
+  else if(a==='continue'&&saved){ G.score=saved.score|0; G.coins=saved.coins|0; G.lives=Math.max(1,saved.lives|0); G.open=saved.open; G.levelIdx=saved.level; player.form=clamp(saved.form|0,0,2); showMap(-1); }
   else if(a==='resume') togglePause();
   else if(a==='restart'){ G.cp=false; player.form=0; beginLevel(false); }
-  else if(a==='next'){ G.levelIdx=Math.min(G.levelIdx+1,LEVELS.length-1); G.cp=false; beginLevel(false); }
-  else if(a==='retry'){ const i=G.levelIdx; newGame(i); }
+  else if(a==='map'&&(G.state==='clear'||G.state==='over'||G.state==='win'||G.state==='pause')){
+    if(G.state==='over'){ G.score=0; G.coins=0; G.lives=3; player.form=0; }
+    const seg=G.state==='clear'?newPath:-1; newPath=-1; showMap(seg);
+  }
 }
 function primaryAction(){
-  const a={title:saved?'continue':'start',pause:'resume',clear:'next',over:'retry',win:'again'}[G.state];
+  if(G.state==='map') return mapEnter();
+  const a={title:saved?'continue':'start',pause:'resume',clear:'map',over:'map',win:'map'}[G.state];
   if(!a) return false; act(a); return true;
 }
 function toggleSound(){ setMuted(!AU.muted); const b=$('b-sound'); b.classList.toggle('off',AU.muted); b.setAttribute('aria-pressed',String(!AU.muted)); }
@@ -166,10 +188,34 @@ $('b-sound').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); tog
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&G.state==='play') togglePause(); });
 
 /* ================= the map between levels ================= */
+/* The map and a level never show together. Switching also re-runs the layout, because the touch keys are laid out
+   differently on the map and the level camera measures itself against them. */
+let mapOn=false;
+function mapMode(on){ if(mapOn===on) return; mapOn=on; document.body.classList.toggle('map',on); mapViewShow(on); layout(); }
+/* Go to the map, with Blorp on the marker of the level he was last on. `seg` is a stretch of path to show
+   appearing, or -1. */
+function showMap(seg){
+  unloadLevel(); musicStop();
+  G.state='map'; G.cp=false; player.dead=false; setSize();
+  mapPlace(G.levelIdx); if(seg>=0) mapReveal(seg);
+  mapMode(true); mapViewSync(); mapBanner(); show(null);
+  writeSave(G.levelIdx);
+}
+/* Play the level Blorp is standing on. Not while he is walking, and not while a path is appearing. */
+function mapEnter(){
+  if(G.state!=='map'||MAPST.walk||MAPST.reveal) return false;
+  G.levelIdx=MAPST.at; G.cp=false; beginLevel(false); return true;
+}
+/* A direction was pressed on the map. */
+function mapPress(dir){
+  if(G.state!=='map') return;
+  if(mapGo(dir)==='locked') mapBanner('Clear this level to open the path');
+}
+function heldDir(){ return null; }
 /* f_map.js calls these as Blorp walks and as a new stretch of path appears */
 function mapStepped(){}
-function mapArrived(){}
-function mapRevealed(seg,k,done){}
+function mapArrived(){ G.levelIdx=MAPST.at; writeSave(G.levelIdx); mapBanner(); }
+function mapRevealed(seg,k,done){ mapViewSync(); if(done) mapBanner(); }
 
 /* ================= input ================= */
 const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,jump:false,run:false};
@@ -254,26 +300,27 @@ function frame(now){
   pollInput();
   if(G.state==='card'){ G.cardT-=dt; if(G.cardT<=0){ show(null); G.state='play'; acc=0; input.jumpBuf=0; input.runEdge=false; musicStart(L.theme); } }
   if(G.state==='play'){ acc+=dt; let n=0; while(acc>=STEP&&n<16&&G.state==='play'){ step(STEP); acc-=STEP; n++; } if(n>=16) acc=0; }
-  if(G.state!=='pause'){ G.time+=dt; animate(dt,G.time); updateCamera(dt,false); }
+  if(G.state==='map'){ G.time+=dt; mapTick(dt,heldDir(),input.run); animFx(dt); mapViewFrame(dt,G.time); }
+  else if(G.state!=='pause'){ G.time+=dt; animate(dt,G.time); updateCamera(dt,false); }
   updateHud();
   renderer.render(scene,camera);
 }
 
 /* Keep progress when the page is republished while open. */
 const hot=window.claude&&window.claude.hot;
-if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,score:G.score,coins:G.coins,lives:G.lives,form:player.form,playing:G.state!=='title'})); }catch(e){} }
+if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,open:G.open,score:G.score,coins:G.coins,lives:G.lives,form:player.form,playing:G.state!=='title'})); }catch(e){} }
 function boot(data){
   layout();
   loadLevel(0,false);
-  saved=data&&data.playing?data:readSave();
+  saved=data&&data.playing?checkSave(data):readSave();
   if(saved){
     /* Continue becomes the main button, so a stray Enter cannot start over and overwrite the save */
-    const b=$('btn-continue'), n=$('btn-start'); b.hidden=false; b.textContent='Continue at '+LABELS[clamp(saved.level|0,0,LEVELS.length-1)];
+    const b=$('btn-continue'), n=$('btn-start'); b.hidden=false; b.textContent='Continue at '+LABELS[saved.level];
     b.classList.remove('quiet'); n.classList.add('quiet'); n.textContent='New game'; n.before(b);
   }
   show('s-title');
   lastT=performance.now();
   requestAnimationFrame(frame);
 }
-window.__romp={G,player,input,kb,load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
+window.__romp={G,player,input,kb,MAPST,map:()=>showMap(-1),open:n=>{ G.open=n; mapViewSync(); mapBanner(); },load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
 if(hot&&hot.ready) hot.ready(boot); else boot((hot&&hot.data)||{});
