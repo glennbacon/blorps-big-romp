@@ -22,7 +22,7 @@ To run it from a copy of this repository, open `index.html` in a current version
 | Pause | P or Esc | Pause button |
 | Sound on/off | M | Sound button |
 
-On a phone held upright the game sits above a handheld-style control deck. In landscape the controls float over the corners. Pressing between A and B presses both.
+On a phone held upright the game sits above a handheld-style control deck. In landscape the controls float over the bottom corners, and the view rides up so the ground Blorp walks on stays above them. Pressing between A and B presses both.
 
 ## What's in the game
 
