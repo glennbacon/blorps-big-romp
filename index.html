@@ -670,11 +670,12 @@ function w1l5(){
   return B.L;
 }
 
-/* ---------- World 2: Glowshroom Grotto. A cave with a low roof, goo pits and moving ledges. ---------- */
+/* ---------- World 2: Glowshroom Grotto. A cave with a low roof, goo pits and moving ledges.
+   The roof stops where the last staircase starts, here and in the castle, so a jump for the flag has room. ---------- */
 function w2l1(){
   const B=LevelBuilder(202,'grotto');
   B.ground(0,30).ground(37,72).ground(79,110).ground(121,150).ground(154,201);
-  B.fill(0,12,201,15,GROUND);
+  B.fill(0,12,179,15,GROUND);
   B.fill(10,11,15,11,GROUND).fill(44,10,50,11,GROUND).fill(90,11,97,11,GROUND).fill(129,9,134,11,GROUND).fill(160,10,168,11,GROUND);
   B.row(8,5,'B?B').enemy('blob',12);
   B.row(17,4,'==').row(21,6,'==').coins(17,5,2).coins(21,7,2).enemy('batty',25,6);
@@ -701,7 +702,7 @@ function w2l1(){
 function w2l2(){
   const B=LevelBuilder(196,'grotto');
   B.ground(0,24).ground(34,52).ground(66,88).ground(104,126).ground(141,195);
-  B.fill(0,12,195,15,GROUND).fill(36,10,44,11,GROUND).fill(70,9,80,11,GROUND).fill(108,10,118,11,GROUND).fill(150,9,160,11,GROUND);
+  B.fill(0,12,173,15,GROUND).fill(36,10,44,11,GROUND).fill(70,9,80,11,GROUND).fill(108,10,118,11,GROUND).fill(150,9,160,11,GROUND);
   B.row(6,5,'B?B').enemy('blob',10).enemy('boing',15).enemy('blob',20);
   B.plat(25,2,3,'x',6,1.1).coins(27,5,5);
   B.row(38,5,'?M?').enemy('spikit',42).enemy('boing',47);
@@ -722,7 +723,7 @@ function w2l2(){
 function w2l3(){
   const B=LevelBuilder(182,'grotto');
   B.ground(0,40).ground(46,96).ground(102,140).ground(146,181);
-  B.fill(0,12,181,15,GROUND);
+  B.fill(0,12,162,15,GROUND);
   B.row(6,5,'?B?').enemy('blob',9).enemy('spikit',14);
   B.row(18,4,'==').row(22,6,'==').ground(26,33,8).coins(18,5,2).coins(22,7,2).enemy('blob',29,8).enemy('blob',31,8);
   B.row(35,5,'==').row(42,3,'===').coins(42,4,3);
@@ -743,7 +744,7 @@ function w2l3(){
 function w2l4(){
   const B=LevelBuilder(190,'grotto');
   B.ground(0,50).ground(55,104).ground(110,150).ground(156,189);
-  B.fill(0,12,189,15,GROUND).fill(12,6,34,11,GROUND).fill(58,7,78,11,GROUND).fill(116,8,146,11,GROUND);
+  B.fill(0,12,171,15,GROUND).fill(12,6,34,11,GROUND).fill(58,7,78,11,GROUND).fill(116,8,146,11,GROUND);
   B.row(5,5,'?').enemy('blob',9);
   B.enemy('spikit',16).enemy('spikit',22).spikes(27,28).enemy('shellby',31).coins(26,4,4);
   B.row(38,5,'BMB').enemy('boing',42).pipe(46,2,true).arc(50,4,6);
@@ -763,7 +764,7 @@ function w2l4(){
 function w2l5(){
   const B=LevelBuilder(222,'grotto');
   B.ground(0,22).ground(52,70).ground(100,118).ground(150,164).ground(176,221);
-  B.fill(0,12,221,15,GROUND).fill(56,10,66,11,GROUND).fill(104,9,114,11,GROUND).fill(180,10,196,11,GROUND);
+  B.fill(0,12,201,15,GROUND).fill(56,10,66,11,GROUND).fill(104,9,114,11,GROUND).fill(180,10,196,11,GROUND);
   B.row(6,5,'BMB').enemy('blob',10).enemy('spikit',15);
   B.plat(24,2,3,'x',5,1.2).row(34,4,'===').plat(39,4,3,'y',4,1.0).row(44,8,'===').row(48,5,'==').coins(34,5,3).coins(44,9,3).coins(48,6,2);
   B.row(55,5,'?B?').enemy('shellby',58).enemy('boing',62).enemy('boing',66);
@@ -784,7 +785,7 @@ function w2l5(){
 function w3l1(){
   const B=LevelBuilder(190,'castle');
   B.ground(0,40).ground(44,86).ground(90,128).ground(133,189);
-  B.fill(0,13,189,15,GROUND).fill(48,11,60,12,GROUND).fill(100,11,116,12,GROUND);
+  B.fill(0,13,165,15,GROUND).fill(48,11,60,12,GROUND).fill(100,11,116,12,GROUND);
   B.row(7,5,'B?B').enemy('spikit',11).enemy('blob',16);
   B.firebar(22,5,5,1.5).enemy('shellby',28).row(31,5,'BMB').pipe(36,2,true).arc(40,4,5);
   B.enemy('spikit',48).firebar(53,5,6,-1.6).enemy('spikit',58);
@@ -803,7 +804,7 @@ function w3l1(){
 function w3l2(){
   const B=LevelBuilder(200,'castle');
   B.ground(0,20).ground(36,50).ground(72,92).ground(112,128).ground(146,199);
-  B.fill(0,13,199,15,GROUND).fill(38,11,48,12,GROUND).fill(76,11,90,12,GROUND).fill(150,11,170,12,GROUND);
+  B.fill(0,13,176,15,GROUND).fill(38,11,48,12,GROUND).fill(76,11,90,12,GROUND).fill(150,11,170,12,GROUND);
   B.row(6,5,'?M?').enemy('spikit',10).enemy('blob',15);
   B.plat(22,2,3,'x',9,1.0).firebar(28,6,6,1.6);
   B.row(39,5,'B?B').enemy('shellby',42).enemy('spikit',46);
@@ -823,7 +824,7 @@ function w3l2(){
 function w3l3(){
   const B=LevelBuilder(188,'castle');
   B.ground(0,60).ground(66,120).ground(126,187);
-  B.fill(0,13,187,15,GROUND).fill(14,9,40,12,GROUND).fill(70,9,96,12,GROUND).fill(130,10,150,12,GROUND);
+  B.fill(0,13,168,15,GROUND).fill(14,9,40,12,GROUND).fill(70,9,96,12,GROUND).fill(130,10,150,12,GROUND);
   B.row(6,5,'B?B').enemy('blob',10);
   B.spikes(17,20).row(17,4,'====').enemy('spikit',23).spikes(25,29).row(25,4,'=====').spikes(34,37).row(34,5,'====').coins(17,5,4).coins(25,5,5).coins(34,6,4);
   B.row(44,5,'?M?').enemy('shellby',47).enemy('boing',51).pipe(55,3,true);
@@ -843,7 +844,7 @@ function w3l3(){
 function w3l4(){
   const B=LevelBuilder(206,'castle');
   B.ground(0,24).ground(30,56).ground(74,100).ground(118,150).ground(156,205);
-  B.fill(0,13,205,15,GROUND).fill(34,11,52,12,GROUND).fill(78,11,96,12,GROUND).fill(160,11,180,12,GROUND);
+  B.fill(0,13,186,15,GROUND).fill(34,11,52,12,GROUND).fill(78,11,96,12,GROUND).fill(160,11,180,12,GROUND);
   B.row(5,5,'BMB').enemy('spikit',9).firebar(14,5,6,1.8).enemy('spikit',19);
   B.row(26,3,'===');
   B.firebar(36,5,6,1.8).firebar(43,5,6,-1.8,1.0).enemy('shellby',48).row(50,5,'?B?').enemy('boing',54);

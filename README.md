@@ -52,7 +52,7 @@ Blorp's world is a group of voxel islands seen from above: the meadow's green hi
 Each world has five levels, and each level has its own sky and light.
 
 1. **Gumdrop Meadow**: open grassland that introduces blocks, stomping, shells, springs and cloud ledges.
-2. **Glowshroom Grotto**: a cave with goo pits, moving ledges and a low roof.
+2. **Glowshroom Grotto**: a cave with goo pits, moving ledges and a low roof, which opens up at the flag.
 3. **Castle Crumble**: lava, spinning ember chains and a first fight with King Grump, who gets away.
 4. **Snowcone Summit**: slippery ice, and icicles that drop when Blorp walks under them.
 5. **Dumpling Dunes**: quicksand, pyramids, and Prickles that lob seeds.
@@ -125,7 +125,7 @@ node tools/check-map.js --map       # print the island as text
 node tools/check-save.js            # saved progress and Continue
 ```
 
-These need Node.js and nothing else. The level check loads the game code from `src/` with the 3D and page layers stubbed out, then has a search bot play each level with the real rules until it reaches the flag or beats the boss. Each level is played as small Blorp and as big Blorp, and the bot jumps 5% lower than a player can. It also reports common slips, such as a monster placed in mid-air, or a tree standing in front of the checkpoint flag or inside the hut after the goal. Run it after editing a level.
+These need Node.js and nothing else. The level check loads the game code from `src/` with the 3D and page layers stubbed out, then has a search bot play each level with the real rules until it reaches the flag or beats the boss. Each level is played as small Blorp and as big Blorp, and the bot jumps 5% lower than a player can. It also reports common slips, such as a monster placed in mid-air, a roof low enough to hit when jumping for the flag, or a tree standing in front of the checkpoint flag or inside the hut after the goal. Run it after editing a level.
 
 The map check loads the game the same way and checks the island and the route (one marker per level, a path that moves one cell at a time, never climbs more than one step, never crosses or runs alongside itself, and is never hidden from the camera by the ground), then drives the real walking rules, the flow between map and levels, and the map's keys and touch pad. Run it after editing the map.
 
