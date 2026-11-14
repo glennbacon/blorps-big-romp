@@ -205,7 +205,17 @@ function layout(){
   const aspect=sw/sh;
   V=clamp(14/aspect,12.5,19); camDist=(V/2)/Math.tan(15*Math.PI/180);
   camera.aspect=aspect; camera.far=camDist+150; camera.updateProjectionMatrix();
-  viewHalfW=V*aspect/2; camBaseY=2+(isTouch&&!portrait?0.27:0.34)*V; /* landscape touch: lift the ground clear of the thumbs */
+  viewHalfW=V*aspect/2;
+  /* Landscape touch: the pads float over the bottom of the stage, so raise the walking surface until it clears them.
+     n is how far below centre the ground line has to sit (1 = bottom edge); the divisor allows for the camera's 0.19 rad tilt. */
+  let lift=0.34*V;
+  if(isTouch&&!portrait){
+    const sb=stage.getBoundingClientRect().bottom; let top=sb;
+    for(const k of [keyL,keyR,keyA,keyB]) top=Math.min(top,k.getBoundingClientRect().top);
+    const n=clamp(1-2*(sb-top+6)/sh,0.1,1);
+    lift=Math.min(lift,n*V/(2*(Math.cos(0.19)-n*Math.sin(0.19)*Math.tan(15*Math.PI/180))));
+  }
+  camBaseY=2+lift;
   if(scene.fog&&TH){ scene.fog.near=camDist+TH.fogNear; scene.fog.far=camDist+TH.fogFar; }
 }
 window.addEventListener('resize',layout);
