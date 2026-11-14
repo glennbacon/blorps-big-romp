@@ -178,6 +178,11 @@ const checks=[
     assert.strictEqual(m.mapSegShown(0),m.MAPSEGS[0].length); assert.strictEqual(m.mapMarkState(1),1);
     assert.strictEqual(go(m,m.mapDirAt(0).fwd),'go');
   }],
+  ['by the time the game is told a new path has finished appearing, its marker reads as open',()=>{
+    const m=game(); globalThis.__heard=[]; m['mapRevealed=function(seg,k,done){ if(done) __heard.push(mapMarkState(seg+1)); }'];
+    m.G.open=1; m.mapPlace(0); m.mapReveal(0); settle(m);
+    assert.deepStrictEqual(globalThis.__heard,[1]);
+  }],
   ['markers read as locked, open and cleared',()=>{
     const m=game(); m.G.open=2;
     assert.deepStrictEqual([0,1,2,3].map(i=>m.mapMarkState(i)),[2,2,1,0]);

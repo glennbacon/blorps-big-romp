@@ -2271,8 +2271,9 @@ function mapGo(dir){
 function mapTick(dt,held,fast){
   const s=MAPST, r=s.reveal, w=s.walk;
   if(r){ const n=MAPSEGS[r.seg].length; r.t+=dt;
-    while(r.t>=MAP_TILE&&r.k<n){ r.t-=MAP_TILE; r.k++; mapRevealed(r.seg,r.k,r.k>=n); }
-    if(r.k>=n) s.reveal=null; return; }
+    /* the reveal is over before the game hears of its last tile, so that what it then draws is the opened marker */
+    while(r.t>=MAP_TILE&&r.k<n){ r.t-=MAP_TILE; r.k++; if(r.k>=n) s.reveal=null; mapRevealed(r.seg,r.k,r.k>=n); }
+    return; }
   if(!w) return;
   const seg=MAPSEGS[w.seg], end=w.dir>0?seg.length-1:0;
   w.t+=dt/(fast?MAP_HOP_FAST:MAP_HOP);
