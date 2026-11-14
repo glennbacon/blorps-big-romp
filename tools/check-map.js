@@ -23,6 +23,8 @@ const STEP={N:[0,-1],E:[1,0],S:[0,1],W:[-1,0]}, COMPASS=Object.keys(STEP);
 function settle(m,held,dt){ let n=0; do{ m.mapTick(dt||1/60,held||null,false); assert(++n<20000,'the map never came to rest'); }while(m.MAPST.walk||m.MAPST.reveal); }
 function go(m,dir){ const r=m.mapGo(dir); if(r==='go') settle(m); return r; }
 const key=code=>({code,preventDefault(){}});
+/* Replace some of the game's functions with ones that only note they were called, with their first argument. */
+function listen(m,names){ const log=[]; globalThis.__heard=log; for(const n of names) m[n+'=function(a){ __heard.push(a===undefined?"'+n+'":"'+n+' "+a); }']; return log; }
 const cellsOf=m=>m.MAPSEGS.map(s=>s.map(c=>c.z*m.MAP_W+c.x));
 
 const checks=[
@@ -256,6 +258,32 @@ const checks=[
     m.act('start'); m.G.open=3; m.mapInput(); for(let k=0;k<20;k++) m.mapTick(1/60,m.heldDir(),false);
     assert.strictEqual(m.MAPST.walk,null); assert.strictEqual(m.MAPST.at,0);
     m.tk[flag]=false; m.mapInput(); m.tk[flag]=true; m.mapInput(); assert(m.MAPST.walk,'a fresh press did not set him off');
+  }],
+  ['the map has a tune of its own, as long as a level tune',()=>{
+    const m=game(), t=m.SONGS.map;
+    assert(t,'there is no map tune'); assert.strictEqual(t.lead.length,m.SONGS.meadow.lead.length); assert.strictEqual(t.bass.length,m.SONGS.meadow.bass.length);
+    assert(t.lead.filter(Boolean).length>=20,'the tune has hardly any notes');
+  }],
+  ['the map tune plays on the map and stops when a level starts',()=>{
+    const m=game(), log=listen(m,['musicStart','musicStop']);
+    m.act('start'); assert.deepStrictEqual(log.slice(-1),['musicStart map']);
+    m.mapEnter(); assert.strictEqual(log[log.length-1],'musicStop');
+    m.levelClear(); m.act('map'); assert.deepStrictEqual(log.slice(-1),['musicStart map']);
+  }],
+  ['hopping, a blocked way, a new path and choosing a level each make their sound',()=>{
+    const m=game(), log=listen(m,['sfx.mapHop','sfx.mapNo','sfx.mapTile','sfx.mapOpen','sfx.mapPlay']);
+    m.act('start'); m.G.open=1;
+    m.mapPress(m.mapDirAt(0).fwd); settle(m);
+    assert.deepStrictEqual(log.splice(0),Array(m.MAPSEGS[0].length-2).fill('sfx.mapHop'),'one hop for each tile between the markers');
+    m.mapPress(m.mapDirAt(1).fwd); assert.deepStrictEqual(log.splice(0),['sfx.mapNo'],'the way on is locked');
+    const dead=COMPASS.find(d=>d!==m.mapDirAt(1).fwd&&d!==m.mapDirAt(1).back);
+    m.mapPress(dead); assert.deepStrictEqual(log.splice(0),['sfx.mapNo'],'there is no path that way');
+    m.mapReveal(1); settle(m);
+    assert.deepStrictEqual(log.splice(0).map(x=>x.split(' ')[0]),[...Array(m.MAPSEGS[1].length-1).fill('sfx.mapTile'),'sfx.mapOpen'],'a blip for each tile, then the marker opening');
+    m.mapEnter(); assert.deepStrictEqual(log.splice(0),['sfx.mapPlay']);
+  }],
+  ['the map sounds are safe when the browser has no sound',()=>{
+    const m=game(); m.sfx.mapHop(); m.sfx.mapNo(); m.sfx.mapTile(3); m.sfx.mapOpen(); m.sfx.mapPlay(); m.musicStart('map'); m.musicStop();
   }],
   ['arriving at a marker saves where Blorp stands',()=>{
     const s=storage(), m=game(s); m.act('start'); m.G.open=3; go(m,m.mapDirAt(0).fwd);

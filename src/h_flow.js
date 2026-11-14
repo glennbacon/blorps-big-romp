@@ -200,17 +200,18 @@ function showMap(seg){
   mapPlace(G.levelIdx); if(seg>=0) mapReveal(seg);
   mapMode(true); mapViewSync(); mapBanner(); show(null);
   padWas=padDir(); playWas=tk.jump; /* whatever is held on arriving does not count until it is let go */
-  writeSave(G.levelIdx);
+  writeSave(G.levelIdx); musicStart('map');
 }
 /* Play the level Blorp is standing on. Not while he is walking, and not while a path is appearing. */
 function mapEnter(){
   if(G.state!=='map'||MAPST.walk||MAPST.reveal) return false;
-  G.levelIdx=MAPST.at; G.cp=false; beginLevel(false); return true;
+  G.levelIdx=MAPST.at; G.cp=false; sfx.mapPlay(); beginLevel(false); return true;
 }
 /* A direction was pressed on the map. */
 function mapPress(dir){
   if(G.state!=='map') return;
-  if(mapGo(dir)==='locked') mapBanner('Clear this level to open the path');
+  const r=mapGo(dir);
+  if(r==='locked'){ sfx.mapNo(); mapBanner('Clear this level to open the path'); } else if(r==='none') sfx.mapNo();
 }
 /* The touch pad and the A key on the map. Only a fresh press counts. */
 let padWas=null, playWas=false;
@@ -221,9 +222,9 @@ function mapInput(){
   padWas=d; playWas=a;
 }
 /* f_map.js calls these as Blorp walks and as a new stretch of path appears */
-function mapStepped(){}
+function mapStepped(){ sfx.mapHop(); }
 function mapArrived(){ G.levelIdx=MAPST.at; writeSave(G.levelIdx); mapBanner(); }
-function mapRevealed(seg,k,done){ mapViewSync(); mapViewPop(seg,k,done); if(done) mapBanner(); }
+function mapRevealed(seg,k,done){ mapViewSync(); mapViewPop(seg,k,done); if(done){ sfx.mapOpen(); mapBanner(); } else sfx.mapTile(k); }
 
 /* ================= input ================= */
 const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,up:false,down:false,jump:false,run:false};
