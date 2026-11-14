@@ -204,7 +204,7 @@ function updatePlayer(dt){
 
 /* ---------- enemies ---------- */
 function spawnEnemy(d){
-  const e={type:d.type,x:d.x,y:d.y,vx:0,vy:0,w:0.8,h:0.8,active:false,dead:false,gone:false,flip:false,deadT:0,onGround:false,t:Math.random()*6,smart:!!d.smart,stomp:true,fly:false};
+  const e={type:d.type,x:d.x,y:d.y,vx:0,vy:0,w:0.8,h:0.8,active:false,dead:false,gone:false,flip:false,deadT:0,onGround:false,t:Math.random()*6,stomp:true,fly:false};
   if(d.type==='blob') e.vx=-1.9;
   else if(d.type==='shellby'){ e.vx=-1.7; e.h=0.9; e.shell=false; e.kick=0; e.shellT=0; e.chain=0; }
   else if(d.type==='spikit'){ e.vx=-1.6; e.h=0.75; e.stomp=false; }
@@ -221,7 +221,6 @@ function killEnemy(e,how,dir){
   burst(e.x,e.y+e.h*0.5,WHITE,5,3,0.1,0.35);
 }
 function walk(e,dt){
-  if(e.smart&&e.onGround&&e.vx){ const ax=Math.floor(e.x+sgn(e.vx)*(e.w/2+0.1)), ty=Math.floor(e.y-0.5); if(!solidAt(ax,ty)&&!semiAt(ax,ty)) e.vx=-e.vx; }
   e.vy-=55*dt; if(e.vy<-MAX_FALL) e.vy=-MAX_FALL;
   let hit=false; if(e.vx&&moveX(e,e.vx*dt)){ e.vx=-e.vx; hit=true; }
   const r=moveY(e,e.vy*dt); if(r===1){ e.vy=0; e.onGround=true; } else { if(r===2) e.vy=0; e.onGround=false; }
