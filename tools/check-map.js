@@ -154,6 +154,13 @@ const checks=[
         assert((I.base[k]>0)===(I.base[n]>0),'floating land touches the ground at '+x+','+z); } }
     for(const i of [9,14]) assert(m.MAPSEGS[i].filter(c=>I.kind[c.z*W+c.x]===m.MK_SEA).length>=2,'stretch '+i+' does not cross open sea');
   }],
+  ['no ground stands between the camera and the path',()=>{
+    /* the camera looks north and down at about 50 degrees, so ground d cells nearer than a tile hides it once it
+       stands more than about 2d steps higher */
+    const m=game(), I=m.ISLE, W=m.MAP_W;
+    m.MAPSEGS.forEach(seg=>seg.forEach(c=>{ for(let d=1;d<=7&&c.z+d<m.MAP_D;d++){ const k=(c.z+d)*W+c.x, h=Math.max(I.h[k],I.deck[k]);
+      assert(h-c.h<=2*d,'the path at '+c.x+','+c.z+' is hidden by the ground at '+c.x+','+(c.z+d)); } }));
+  }],
   ['running is faster than walking',()=>{
     const time=fast=>{ const m=game(); m.G.open=3; m.mapPlace(0); m.mapGo(m.mapDirAt(0).fwd); let n=0; while(m.MAPST.walk){ m.mapTick(1/120,null,fast); n++; assert(n<20000); } return n; };
     assert(time(true)<time(false)*0.8);

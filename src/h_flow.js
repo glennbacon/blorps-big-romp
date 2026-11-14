@@ -215,7 +215,7 @@ function heldDir(){ return null; }
 /* f_map.js calls these as Blorp walks and as a new stretch of path appears */
 function mapStepped(){}
 function mapArrived(){ G.levelIdx=MAPST.at; writeSave(G.levelIdx); mapBanner(); }
-function mapRevealed(seg,k,done){ mapViewSync(); if(done) mapBanner(); }
+function mapRevealed(seg,k,done){ mapViewSync(); mapViewPop(seg,k,done); if(done) mapBanner(); }
 
 /* ================= input ================= */
 const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,jump:false,run:false};
@@ -285,7 +285,7 @@ function layout(){
     lift=Math.min(lift,n*V/(2*(Math.cos(0.19)-n*Math.sin(0.19)*Math.tan(15*Math.PI/180))));
   }
   camBaseY=2+lift;
-  if(scene.fog&&TH){ scene.fog.near=camDist+TH.fogNear; scene.fog.far=camDist+TH.fogFar; }
+  if(scene.fog&&TH&&!mapOn){ scene.fog.near=camDist+TH.fogNear; scene.fog.far=camDist+TH.fogFar; } /* the map keeps its own haze */
 }
 window.addEventListener('resize',layout);
 const hudC={lives:-1,coins:-1,score:-1};
@@ -322,5 +322,5 @@ function boot(data){
   lastT=performance.now();
   requestAnimationFrame(frame);
 }
-window.__romp={G,player,input,kb,MAPST,map:()=>showMap(-1),open:n=>{ G.open=n; mapViewSync(); mapBanner(); },load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
+window.__romp={G,player,input,kb,MAPST,map:()=>showMap(-1),open:n=>{ G.open=n; mapViewSync(); mapBanner(); },at:i=>{ mapPlace(i); mapBanner(); },zoom:k=>{ mapZoom=k; },load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
 if(hot&&hot.ready) hot.ready(boot); else boot((hot&&hot.data)||{});

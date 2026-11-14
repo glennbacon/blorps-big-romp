@@ -7,19 +7,19 @@ const MK_SEA=0, MK_LAND=1, MK_LAVA=2, MK_GOO=3, MK_POND=4;
 const MAP_HOP=0.14, MAP_HOP_FAST=0.085, MAP_TILE=0.09; /* seconds per tile: walking, running, and a new path appearing */
 const MAP_DIR={N:[0,-1],E:[1,0],S:[0,1],W:[-1,0]};
 
+/* a fixed scatter from 0 to 1 for each cell, so coasts are ragged and the ground is flecked the same way every time */
+function mapJit(x,z){ let t=Math.imul(x*374761393+z*668265263,1274126177); t^=t>>>13; t=Math.imul(t,1274126177); return ((t^(t>>>16))>>>0)/4294967296; }
 function MapBuilder(){
   const N=MAP_W*MAP_D;
   /* h: land height in steps, 0 for none. base: where a floating column stops, 0 for one that reaches the seabed.
      world: 0 to 5, or -1 for open sea. kind: one of MK_. deck: height of a bridge or stair over a gap, 0 for none.
      route: the cell's place along the route, or -1. */
   const I={h:new Uint8Array(N),base:new Uint8Array(N),world:new Int8Array(N).fill(-1),kind:new Uint8Array(N),deck:new Uint8Array(N),route:new Int16Array(N).fill(-1)};
-  /* a fixed scatter, so every coast is ragged the same way each time */
-  const jit=(x,z)=>{ let t=Math.imul(x*374761393+z*668265263,1274126177); t^=t>>>13; t=Math.imul(t,1274126177); return ((t^(t>>>16))>>>0)/4294967296; };
   /* every cell inside an ellipse, with how far out it is: 0 at the middle, 1 at the edge */
   function each(cx,cz,rx,rz,rag,fn){
     for(let z=Math.max(1,Math.floor(cz-rz-1));z<=Math.min(MAP_D-2,Math.ceil(cz+rz+1));z++) for(let x=Math.max(1,Math.floor(cx-rx-1));x<=Math.min(MAP_W-2,Math.ceil(cx+rx+1));x++){
       const dx=(x+0.5-cx)/rx, dz=(z+0.5-cz)/rz, d=Math.sqrt(dx*dx+dz*dz);
-      if(d<=1+(jit(x,z)-0.5)*rag) fn(z*MAP_W+x,Math.min(d,1));
+      if(d<=1+(mapJit(x,z)-0.5)*rag) fn(z*MAP_W+x,Math.min(d,1));
     }
   }
   const B={

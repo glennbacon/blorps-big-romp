@@ -90,6 +90,22 @@ body.portrait .tag{display:none} /* short stage: keep Blorp in view under the lo
 #nogl{position:absolute;inset:0;z-index:9;margin:0;display:grid;place-items:center;padding:24px;text-align:center;background:var(--ink);font-size:18px;line-height:1.4}
 #nogl[hidden]{display:none}
 
+/* ---------- the map ---------- */
+#map-banner{display:none}
+body.map #map-banner{position:absolute;left:50%;top:10px;margin:0;transform:translateX(-50%);z-index:3;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;
+  width:max-content;max-width:calc(100% - 24px);padding:8px 12px;background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:8px;box-shadow:0 6px 0 var(--ink);
+  font:700 clamp(16px,1.6vmin + 10px,22px)/1 var(--font-display);pointer-events:none}
+#map-label{padding:.25em .5em;background:var(--ink);color:var(--coin);border-radius:4px}
+#map-done{color:#0b8577}
+#map-done[hidden]{display:none}
+.map-hint,#map-note{font-size:.78em;font-weight:500}
+.map-hint b{color:var(--grape)}
+#map-note{display:none;color:#c2214f}
+#map-banner.note #map-note{display:inline}
+#map-banner.note .map-hint{display:none}
+body.map #b-pause,body.map #h-level{display:none} /* nothing to pause, and the banner says where Blorp is */
+@media (max-width:760px){body.map #map-banner{top:calc(2em + 34px)}} /* no room beside the HUD chips: sit under them */
+
 /* ---------- touch deck ---------- */
 #deck{display:none}
 body.touch #deck{display:flex}
@@ -128,6 +144,9 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <button class="hud-btn" id="b-pause" type="button" aria-label="Pause"><svg viewBox="0 0 8 8" aria-hidden="true"><rect x="1.5" y="1" width="2" height="6" fill="currentColor"/><rect x="4.5" y="1" width="2" height="6" fill="currentColor"/></svg></button>
       </div>
     </div>
+
+    <p id="map-banner"><b id="map-label">1-1</b><span id="map-name">Gumdrop Meadow</span><span id="map-done" hidden>Cleared</span>
+      <span class="map-hint kbd-only"><b>Space</b> to play</span><span class="map-hint touch-only"><b>A</b> to play</span><span id="map-note"></span></p>
 
     <div id="overlay" class="s-title">
       <section class="screen" id="s-title">
