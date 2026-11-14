@@ -51,7 +51,7 @@ function level1(){
   B.row(21,5,'B?BMB').row(23,9,'?').enemy('blob',27);
   B.pipe(31,2).row(36,5,'I').enemy('blob',35).pipe(39,3).coins(39,6,2);
   B.arc(44,4,4);
-  B.fill(49,2,57,3,GROUND).row(52,7,'?B?').enemy('shellby',54,4,{smart:true});
+  B.fill(49,2,57,3,GROUND).row(52,7,'?B?').enemy('shellby',54,4);
   B.spring(60).row(62,8,'======').coins(62,9,6).enemy('batty',64,5);
   B.row(68,5,'BBB').enemy('blob',70).enemy('blob',72);
   B.arc(74,4,5);
@@ -81,7 +81,7 @@ function level2(){
   B.plat(31,2,3,'x',3,1.3).coins(32,5,4);
   B.row(40,5,'?M?').enemy('boing',44).enemy('boing',48).enemy('spikit',52);
   B.spring(57).fill(61,2,72,5,GROUND);
-  B.row(64,9,'B?B').enemy('shellby',67,6,{smart:true}).coins(68,7,4);
+  B.row(64,9,'B?B').enemy('shellby',67,6).coins(68,7,4);
   B.plat(74,2,3,'y',4,1.2);
   B.checkpoint(82);
   B.row(85,5,'B?BsB').enemy('batty',89,7,{ry:0.8}).enemy('spikit',95);
