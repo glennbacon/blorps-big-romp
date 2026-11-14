@@ -561,11 +561,12 @@ function voice(type,f0,f1,t,dur,vol,dest){
   o.connect(g); g.connect(dest); o.start(t); o.stop(t+dur+0.03);
 }
 function tone(type,f0,f1,dur,vol,delay){ if(!AU.ac||AU.ac.state!=='running') return; voice(type,f0,f1,AU.ac.currentTime+(delay||0),dur,vol,AU.sg); }
-function hiss(dur,vol,delay,hp,t0){
-  const ac=AU.ac; if(!ac||ac.state!=='running') return; const t=t0||ac.currentTime+(delay||0);
+function hiss(dur,vol,delay,hp){
+  const ac=AU.ac; if(!ac||ac.state!=='running') return; const t=ac.currentTime+(delay||0);
   const s=ac.createBufferSource(); s.buffer=AU.noise; const f=ac.createBiquadFilter(); f.type='highpass'; f.frequency.value=hp||900;
-  const g=ac.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  s.connect(f); f.connect(g); g.connect(t0?AU.mg:AU.sg); s.start(t); s.stop(t+dur+0.02);
+  /* A gain node sits at 1 until its first scheduled value. Start it at 0, or a burst that begins a sample early clicks at full volume. */
+  const g=ac.createGain(); g.gain.value=0; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  s.connect(f); f.connect(g); g.connect(AU.sg); s.start(t); s.stop(t+dur+0.02);
 }
 function jingle(type,notes,step,vol,len){ notes.split(' ').forEach((n,i)=>{ if(n!=='.') tone(type,NF(n),0,len||step*1.4,vol,i*step); }); }
 const sfx={
@@ -626,7 +627,6 @@ function musicTick(){
     const i=mus.step%s.lead.length, l=s.lead[i], b=s.bass[i%s.bass.length];
     if(l) voice(s.wave,l.f,0,mus.next,sd*l.d*0.9,s.wave==='square'?0.07:0.2,AU.mg);
     if(b) voice('triangle',b.f,0,mus.next,sd*b.d*0.85,0.26,AU.mg);
-    if(i%2===1) hiss(0.03,0.05,0,5000,mus.next);
     mus.step++; mus.next+=sd;
   }
 }
