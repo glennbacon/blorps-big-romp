@@ -5,7 +5,8 @@
    tested are the real ones. A search bot then plays each level: it keeps a snapshot for every spot it has managed to stand
    on, keeps trying moves from those spots, and stops when Blorp reaches the flag or beats the boss. Each level is
    played twice, as small Blorp and as big Blorp (who must not get hurt), and the bot jumps 5% lower than a player
-   can, so a pass leaves some margin. It also reports common slips, such as a monster placed in mid-air.
+   can, so a pass leaves some margin. It also reports common slips, such as a monster placed in mid-air, or a
+   tree standing in front of the checkpoint flag or inside the hut after the goal.
 
      node tools/check-levels.js              check every level
      node tools/check-levels.js 2-3 4-1      check only these levels
@@ -22,6 +23,9 @@ function harness(){
   Math.random=()=>{ seed=(seed+0x6D2B79F5)|0; return mix(seed); };
   const rnd=()=>{ botSeed=(botSeed+0x6D2B79F5)|0; return mix(botSeed); };
   const same=(a,b)=>{ for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false; return true; };
+  /* every prop the scenery places goes through put(); keep a note of each while a level loads */
+  let props=null; const put0=put;
+  put=function(list,model,ox,oy,oz){ if(props) props.push({model,ox,oy,oz}); return put0(list,model,ox,oy,oz); };
   const copies=a=>a.map(o=>Object.assign({},o));
   const bossOf=()=>{ for(const e of enemies) if(e.type==='boss') return e; return null; };
 
@@ -128,6 +132,28 @@ function harness(){
       for(let x=gx-1;x<=gx+8;x++){ if(!sol(x,1)) out.push('no ground at x '+x+' around the flag'); for(let y=2;y<12;y++) if(at(x,y)!==AIR&&!(x===gx&&y===2)) out.push('tile in the way at '+x+','+y+' around the flag'); } }
     else if(!L0.boss) out.push('level has neither a flag nor a boss');
     if(L0.boss){ const b=L0.boss; if(!(b.x0<b.x&&b.x<b.x1)) out.push('boss starts outside its arena'); onFloor('boss',b.x,b.y); }
+    /* scenery: nothing tall may stand between the camera and the checkpoint flag. The flag stands at depth CP_Z and
+       spans about a tile to the right of its post; the 0.75 allows for props further back shifting sideways on screen. */
+    props=[]; loadLevel(idx,false); const placed=props; props=null;
+    if(L0.checkpoint){
+      const cp=L0.checkpoint, seen=new Set();
+      for(const q of placed) for(const b of q.model){
+        const x0=(b[0]+q.ox)/8, x1=x0+b[3]/8, y0=(b[1]+q.oy)/8, y1=y0+b[4]/8, front=(b[2]+b[5]+q.oz)/8;
+        if(front>CP_Z-0.075&&y1>cp.y+1&&y0<cp.y+2.4&&x1>cp.x-0.25-0.75&&x0<cp.x+0.95+0.75) seen.add(Math.round(q.ox/8));
+      }
+      for(const x of seen) out.push('a tall prop near x '+x+' stands in front of the checkpoint at x '+cp.x);
+    }
+    /* nor may anything tall stand where the hut after the flag does: it would poke out of the walls or roof */
+    if(L0.goal){
+      const ox=(L0.goal.x+HUT_DX)*8, seen=new Set(); let hx0=1e9, hx1=-1e9, hz0=1e9, hz1=-1e9;
+      for(const b of mHut()){ hx0=Math.min(hx0,b[0]+ox); hx1=Math.max(hx1,b[0]+b[3]+ox); hz0=Math.min(hz0,b[2]+HUT_Z); hz1=Math.max(hz1,b[2]+b[5]+HUT_Z); }
+      for(const q of placed){
+        if(q.ox===ox&&q.oz===HUT_Z) continue; /* the hut itself */
+        for(const b of q.model){ const x0=b[0]+q.ox, x1=x0+b[3], top=b[1]+b[4]+q.oy, back=b[2]+q.oz, front=back+b[5];
+          if(top>16+12&&x1>hx0&&x0<hx1&&front>hz0&&back<hz1) seen.add(Math.round(q.ox/8)); }
+      }
+      for(const x of seen) out.push('a tall prop near x '+x+' overlaps the hut after the flag');
+    }
     for(const p of L0.plats){ const x1=p.x+(p.axis==='x'?p.range:0)+p.w, y1=p.y+(p.axis==='y'?p.range:0); if(p.x<0||x1>W0||p.y<1||y1>H-2) out.push('moving ledge at '+p.x+','+p.y+' leaves the level'); }
     return out;
   }
