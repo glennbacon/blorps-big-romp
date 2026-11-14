@@ -165,6 +165,12 @@ $('b-pause').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); tog
 $('b-sound').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); toggleSound(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&G.state==='play') togglePause(); });
 
+/* ================= the map between levels ================= */
+/* f_map.js calls these as Blorp walks and as a new stretch of path appears */
+function mapStepped(){}
+function mapArrived(){}
+function mapRevealed(seg,k,done){}
+
 /* ================= input ================= */
 const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,jump:false,run:false};
 const KEYS={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyZ:'jump',KeyK:'jump',ShiftLeft:'run',ShiftRight:'run',KeyX:'run',KeyJ:'run'};

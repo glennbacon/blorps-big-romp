@@ -1,7 +1,7 @@
 /* ================= play: physics and rules ================= */
 /* Speeds are the NES Super Mario Bros. values converted from pixels per frame to tiles per second. */
 const WALK_MAX=5.86,RUN_MAX=9.61,WALK_ACC=8.35,RUN_ACC=12.5,REL_DEC=11.4,SKID_DEC=22.9,MIN_V=0.28,MAX_FALL=15,STEP=1/120;
-const G={state:'title',levelIdx:0,score:0,coins:0,lives:3,cp:false,time:0,bossDead:false,bossSeen:false,winT:0,cardT:0,goalT:0,fountain:0};
+const G={state:'title',levelIdx:0,open:0,score:0,coins:0,lives:3,cp:false,time:0,bossDead:false,bossSeen:false,winT:0,cardT:0,goalT:0,fountain:0};
 const input={left:false,right:false,jump:false,run:false,jumpBuf:0,runEdge:false};
 const player={x:3.5,y:2,vx:0,vy:0,w:0.7,h:0.9,form:0,prevForm:0,face:1,onGround:true,jumping:false,coyote:0,inv:0,star:0,dead:false,deadT:0,goal:null,
   walkPh:0,idleT:0,combo:0,riding:null,gHold:28.125,gFall:98.4,airMax:WALK_MAX,springHold:false,growT:0,fireCool:0,skid:false,squash:0};
