@@ -473,7 +473,7 @@ function w4l5(){
   return B.L;
 }
 
-/* ---------- World 5: Doughnut Dunes. Quicksand, pyramids, and Prickles that lob seeds. ---------- */
+/* ---------- World 5: Dumpling Dunes. Quicksand, pyramids, and Prickles that lob seeds. ---------- */
 /* 5-1: the first Prickles. */
 function w5l1(){
   const B=LevelBuilder(190,'dunes');
@@ -671,7 +671,7 @@ const WORLDS=[
   {name:'Glowshroom Grotto',levels:[w2l1,w2l2,w2l3,w2l4,w2l5]},
   {name:'Castle Crumble',levels:[w3l1,w3l2,w3l3,w3l4,w3l5]},
   {name:'Snowcone Summit',levels:[w4l1,w4l2,w4l3,w4l4,w4l5]},
-  {name:'Doughnut Dunes',levels:[w5l1,w5l2,w5l3,w5l4,w5l5]},
+  {name:'Dumpling Dunes',levels:[w5l1,w5l2,w5l3,w5l4,w5l5]},
   {name:'Comet Citadel',levels:[w6l1,w6l2,w6l3,w6l4,w6l5]}
 ];
 /* The flat list the game plays through. Each level knows its world, its place in that world, and a label such as 2-3. */

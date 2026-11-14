@@ -55,7 +55,7 @@ Each world has five levels, and each level has its own sky and light.
 2. **Glowshroom Grotto**: a cave with goo pits, moving ledges and a low roof.
 3. **Castle Crumble**: lava, spinning ember chains and a first fight with King Grump, who gets away.
 4. **Snowcone Summit**: slippery ice, and icicles that drop when Blorp walks under them.
-5. **Doughnut Dunes**: quicksand, pyramids, and Prickles that lob seeds.
+5. **Dumpling Dunes**: quicksand, pyramids, and Prickles that lob seeds.
 6. **Comet Citadel**: low gravity, so Blorp jumps higher and floats further, and King Grump again at the end.
 
 **Blocks and pickups**

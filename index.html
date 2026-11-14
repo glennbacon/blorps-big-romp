@@ -971,7 +971,7 @@ function w4l5(){
   return B.L;
 }
 
-/* ---------- World 5: Doughnut Dunes. Quicksand, pyramids, and Prickles that lob seeds. ---------- */
+/* ---------- World 5: Dumpling Dunes. Quicksand, pyramids, and Prickles that lob seeds. ---------- */
 /* 5-1: the first Prickles. */
 function w5l1(){
   const B=LevelBuilder(190,'dunes');
@@ -1169,7 +1169,7 @@ const WORLDS=[
   {name:'Glowshroom Grotto',levels:[w2l1,w2l2,w2l3,w2l4,w2l5]},
   {name:'Castle Crumble',levels:[w3l1,w3l2,w3l3,w3l4,w3l5]},
   {name:'Snowcone Summit',levels:[w4l1,w4l2,w4l3,w4l4,w4l5]},
-  {name:'Doughnut Dunes',levels:[w5l1,w5l2,w5l3,w5l4,w5l5]},
+  {name:'Dumpling Dunes',levels:[w5l1,w5l2,w5l3,w5l4,w5l5]},
   {name:'Comet Citadel',levels:[w6l1,w6l2,w6l3,w6l4,w6l5]}
 ];
 /* The flat list the game plays through. Each level knows its world, its place in that world, and a label such as 2-3. */
@@ -2228,7 +2228,7 @@ function buildIsle(){
    .flat(23.5,22.3,4.4,3.7,1,0.2).pool(23.2,22,1.3,0.9,MK_GOO).pool(26.4,23.4,0.8,0.7,MK_GOO);
   /* 3 Castle Crumble, south-east: a low rim, a moat of lava, and the rock the castle stands on */
   B.blob(39.5,21.9,7.2,6.1,2,2,0.2).pool(39.5,21.9,6.4,5.3,MK_LAVA).blob(39.5,21.9,4.6,3.9,2,3,0.1).raise(40.5,20.2,2.8,3,0.8);
-  /* 5 Doughnut Dunes, north, middle: rolling sand and an oasis. Laid before the mountain, which stands on its edge. */
+  /* 5 Dumpling Dunes, north, middle: rolling sand and an oasis. Laid before the mountain, which stands on its edge. */
   B.blob(23,8,8.8,5.6,4,2).raise(26,5.5,2.6,2,0.7).raise(18.5,10.5,2.4,2,0.7).raise(21.5,3.6,2,1).raise(15.6,7.6,2,1)
    .pool(21.6,9.9,1.5,1,MK_POND);
   /* 4 Snowcone Summit, north-east: the tallest ground on the map */

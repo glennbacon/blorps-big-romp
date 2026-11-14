@@ -80,7 +80,7 @@ function buildIsle(){
    .flat(23.5,22.3,4.4,3.7,1,0.2).pool(23.2,22,1.3,0.9,MK_GOO).pool(26.4,23.4,0.8,0.7,MK_GOO);
   /* 3 Castle Crumble, south-east: a low rim, a moat of lava, and the rock the castle stands on */
   B.blob(39.5,21.9,7.2,6.1,2,2,0.2).pool(39.5,21.9,6.4,5.3,MK_LAVA).blob(39.5,21.9,4.6,3.9,2,3,0.1).raise(40.5,20.2,2.8,3,0.8);
-  /* 5 Doughnut Dunes, north, middle: rolling sand and an oasis. Laid before the mountain, which stands on its edge. */
+  /* 5 Dumpling Dunes, north, middle: rolling sand and an oasis. Laid before the mountain, which stands on its edge. */
   B.blob(23,8,8.8,5.6,4,2).raise(26,5.5,2.6,2,0.7).raise(18.5,10.5,2.4,2,0.7).raise(21.5,3.6,2,1).raise(15.6,7.6,2,1)
    .pool(21.6,9.9,1.5,1,MK_POND);
   /* 4 Snowcone Summit, north-east: the tallest ground on the map */
