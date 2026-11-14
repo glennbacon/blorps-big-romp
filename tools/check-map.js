@@ -22,6 +22,7 @@ const STEP={N:[0,-1],E:[1,0],S:[0,1],W:[-1,0]}, COMPASS=Object.keys(STEP);
 /* keep ticking until Blorp is standing still and no path is appearing */
 function settle(m,held,dt){ let n=0; do{ m.mapTick(dt||1/60,held||null,false); assert(++n<20000,'the map never came to rest'); }while(m.MAPST.walk||m.MAPST.reveal); }
 function go(m,dir){ const r=m.mapGo(dir); if(r==='go') settle(m); return r; }
+const key=code=>({code,preventDefault(){}});
 const cellsOf=m=>m.MAPSEGS.map(s=>s.map(c=>c.z*m.MAP_W+c.x));
 
 const checks=[
@@ -212,6 +213,49 @@ const checks=[
     const m=game(); m.act('start'); m.mapEnter(); m.G.state='play'; m.G.score=900; m.G.coins=5; m.G.lives=2; m.player.form=1;
     m.togglePause(); assert.strictEqual(m.G.state,'pause'); m.act('map');
     assert.deepStrictEqual([m.G.state,m.G.score,m.G.coins,m.G.lives,m.player.form,m.G.open,m.MAPST.reveal],['map',900,5,2,1,0,null]);
+  }],
+  ['an arrow key or W A S D sets Blorp off, and the way north does not start the level',()=>{
+    const KEY={N:['ArrowUp','KeyW'],E:['ArrowRight','KeyD'],S:['ArrowDown','KeyS'],W:['ArrowLeft','KeyA']};
+    for(const k of [0,1]){ const m=game(); m.act('start'); m.G.open=m.LEVELS.length;
+      for(const d of COMPASS){ let i=0; while(m.mapDirAt(i).fwd!==d) i++;
+        m.mapPlace(i); m.keyDown(key(KEY[d][k])); m.keyUp(key(KEY[d][k]));
+        assert(m.MAPST.walk&&m.MAPST.walk.seg===i,KEY[d][k]+' did not set him off from marker '+i); assert.strictEqual(m.G.state,'map'); } }
+  }],
+  ['Space, Enter, Z and K start the level Blorp stands on',()=>{
+    for(const code of ['Space','Enter','KeyZ','KeyK']){ const m=game(); m.act('start'); m.G.open=4; m.mapPlace(3); m.keyDown(key(code));
+      assert.deepStrictEqual([m.G.state,m.G.levelIdx],['card',3],code); }
+  }],
+  ['a key that is only repeating because it is held does not count as a press',()=>{
+    const m=game(); m.act('start'); m.G.open=3;
+    m.keyDown(Object.assign(key('ArrowRight'),{repeat:true})); m.keyDown(Object.assign(key('Space'),{repeat:true}));
+    assert.strictEqual(m.MAPST.walk,null); assert.strictEqual(m.G.state,'map');
+  }],
+  ['holding an arrow key carries Blorp through a marker, and letting go stops him at the next',()=>{
+    const m=game(), n=m.MAPNODES.length; m.act('start'); m.G.open=n;
+    let i=0; while(m.mapDirAt(i).fwd!=='E'||m.mapDirAt(i+1).fwd!=='E') i++;
+    m.mapPlace(i); m.keyDown(key('ArrowRight')); assert.strictEqual(m.heldDir(),'E');
+    let t=0; do{ m.mapTick(1/60,m.heldDir(),false); assert(++t<20000); }while(m.MAPST.at<i+1||m.MAPST.walk===null);
+    m.keyUp(key('ArrowRight')); assert.strictEqual(m.heldDir(),null);
+    do{ m.mapTick(1/60,m.heldDir(),false); assert(++t<20000); }while(m.MAPST.walk);
+    assert.strictEqual(m.MAPST.at,i+2);
+  }],
+  ['on the map the touch pad walks Blorp in all four directions',()=>{
+    const PAD={N:'up',E:'right',S:'down',W:'left'}, m=game(); m.act('start'); m.G.open=m.LEVELS.length;
+    for(const d of COMPASS){ let i=0; while(m.mapDirAt(i).fwd!==d) i++;
+      m.mapPlace(i); m.mapInput(); m.tk[PAD[d]]=true; m.mapInput(); assert.strictEqual(m.heldDir(),d); m.tk[PAD[d]]=false;
+      assert(m.MAPST.walk&&m.MAPST.walk.seg===i,'the '+PAD[d]+' key did not set him off from marker '+i); }
+  }],
+  ['a jump held from the level before does not start one on arriving at the map',()=>{
+    const m=game(); m.tk.jump=true; m.act('start'); m.mapInput();
+    assert.strictEqual(m.G.state,'map');
+    m.tk.jump=false; m.mapInput(); m.tk.jump=true; m.mapInput();
+    assert.strictEqual(m.G.state,'card');
+  }],
+  ['a direction held from the level before does not walk Blorp off on arriving at the map',()=>{
+    const PAD={N:'up',E:'right',S:'down',W:'left'}, m=game(), flag=PAD[m.mapDirAt(0).fwd]; m.tk[flag]=true;
+    m.act('start'); m.G.open=3; m.mapInput(); for(let k=0;k<20;k++) m.mapTick(1/60,m.heldDir(),false);
+    assert.strictEqual(m.MAPST.walk,null); assert.strictEqual(m.MAPST.at,0);
+    m.tk[flag]=false; m.mapInput(); m.tk[flag]=true; m.mapInput(); assert(m.MAPST.walk,'a fresh press did not set him off');
   }],
   ['arriving at a marker saves where Blorp stands',()=>{
     const s=storage(), m=game(s); m.act('start'); m.G.open=3; go(m,m.mapDirAt(0).fwd);

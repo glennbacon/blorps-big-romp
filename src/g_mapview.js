@@ -159,7 +159,10 @@ function mapViewShow(on){
 }
 /* The camera looks down on Blorp from the south and follows him, stopping short of showing nothing but sea. */
 function mapCamera(dt,snap){
-  const s=MAPST, vt=V*0.95*mapZoom, hw=vt*camera.aspect/2, hd=vt/Math.sin(MAP_PITCH)/2, d=camDist*0.95*mapZoom; /* mapZoom is for looking the island over from the console */
+  /* vt is how much of the world fits top to bottom at Blorp's distance. A level's view grows on a narrow screen to
+     keep its width; here it is capped, or Blorp would be a speck on a phone. mapZoom is for looking the island over
+     from the console. */
+  const s=MAPST, vt=Math.min(V*0.95,14)*mapZoom, hw=vt*camera.aspect/2, hd=vt/Math.sin(MAP_PITCH)/2, d=vt/2/Math.tan(15*Math.PI/180);
   const lim=(v,lo,hi)=>lo<hi?clamp(v,lo,hi):(lo+hi)/2;
   const tx=lim(s.x,hw-3,MAP_W-hw+3), ty=s.y, tz=lim(s.z,hd-4.5,MAP_D-hd+3), e=snap?1:Math.min(1,dt*4.5);
   mapCamX+=(tx-mapCamX)*e; mapCamY+=(ty-mapCamY)*e; mapCamZ+=(tz-mapCamZ)*e;

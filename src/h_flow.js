@@ -199,6 +199,7 @@ function showMap(seg){
   G.state='map'; G.cp=false; player.dead=false; setSize();
   mapPlace(G.levelIdx); if(seg>=0) mapReveal(seg);
   mapMode(true); mapViewSync(); mapBanner(); show(null);
+  padWas=padDir(); playWas=tk.jump; /* whatever is held on arriving does not count until it is let go */
   writeSave(G.levelIdx);
 }
 /* Play the level Blorp is standing on. Not while he is walking, and not while a path is appearing. */
@@ -211,44 +212,63 @@ function mapPress(dir){
   if(G.state!=='map') return;
   if(mapGo(dir)==='locked') mapBanner('Clear this level to open the path');
 }
-function heldDir(){ return null; }
+/* The touch pad and the A key on the map. Only a fresh press counts. */
+let padWas=null, playWas=false;
+function mapInput(){
+  const d=padDir(), a=tk.jump;
+  if(d&&d!==padWas) mapPress(d);
+  if(a&&!playWas) mapEnter();
+  padWas=d; playWas=a;
+}
 /* f_map.js calls these as Blorp walks and as a new stretch of path appears */
 function mapStepped(){}
 function mapArrived(){ G.levelIdx=MAPST.at; writeSave(G.levelIdx); mapBanner(); }
 function mapRevealed(seg,k,done){ mapViewSync(); mapViewPop(seg,k,done); if(done) mapBanner(); }
 
 /* ================= input ================= */
-const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,jump:false,run:false};
+const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,up:false,down:false,jump:false,run:false};
 const KEYS={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyZ:'jump',KeyK:'jump',ShiftLeft:'run',ShiftRight:'run',KeyX:'run',KeyJ:'run'};
-window.addEventListener('keydown',e=>{
+/* On the map the arrows and W A S D walk Blorp north, east, south and west. Up and W jump in a level; here they are
+   only a direction, so they never start one. */
+const MAPKEYS={ArrowUp:'N',KeyW:'N',ArrowRight:'E',KeyD:'E',ArrowDown:'S',KeyS:'S',ArrowLeft:'W',KeyA:'W'}, kbDir={N:false,E:false,S:false,W:false};
+let lastDir='N';
+function keyDown(e){
   if(e.metaKey||e.ctrlKey||e.altKey) return;
-  const k=KEYS[e.code];
-  if(e.repeat){ if(k||e.code==='Enter') e.preventDefault(); return; }
+  const k=KEYS[e.code], d=MAPKEYS[e.code];
+  if(e.repeat){ if(k||d||e.code==='Enter') e.preventDefault(); return; }
   auInit();
-  if(e.code==='Enter'||(e.code==='Space'&&G.state!=='play')){ e.preventDefault(); primaryAction(); return; }
+  if(e.code==='Enter'||(e.code==='Space'&&G.state!=='play')||(G.state==='map'&&(e.code==='KeyZ'||e.code==='KeyK'))){ e.preventDefault(); primaryAction(); return; }
   if(e.code==='KeyP'||e.code==='Escape'){ e.preventDefault(); togglePause(); return; }
   if(e.code==='KeyM'){ toggleSound(); return; }
+  if(d){ kbDir[d]=true; lastDir=d; e.preventDefault(); if(G.state==='map') mapPress(d); }
   if(k){ kb[k]=true; e.preventDefault(); }
-});
-window.addEventListener('keyup',e=>{ const k=KEYS[e.code]; if(k){ kb[k]=false; e.preventDefault(); } });
-window.addEventListener('blur',()=>{ kb.left=kb.right=kb.jump=kb.run=false; });
+}
+function keyUp(e){ const k=KEYS[e.code], d=MAPKEYS[e.code]; if(d) kbDir[d]=false; if(k){ kb[k]=false; e.preventDefault(); } }
+window.addEventListener('keydown',keyDown);
+window.addEventListener('keyup',keyUp);
+window.addEventListener('blur',()=>{ kb.left=kb.right=kb.jump=kb.run=false; kbDir.N=kbDir.E=kbDir.S=kbDir.W=false; });
+const padDir=()=>tk.up?'N':tk.right?'E':tk.down?'S':tk.left?'W':null;
+/* the direction being held on the map: the key pressed last if it is still down, else any that is, else the touch pad */
+function heldDir(){ if(kbDir[lastDir]) return lastDir; for(const d in kbDir) if(kbDir[d]) return d; return padDir(); }
 function pollInput(){
   const j=kb.jump||tk.jump, r=kb.run||tk.run;
   if(j&&!input.jump) input.jumpBuf=0.11;
   if(r&&!input.run) input.runEdge=true;
   input.jump=j; input.run=r; input.left=kb.left||tk.left; input.right=kb.right||tk.right;
 }
-const padMove=$('pad-move'), padAct=$('pad-act'), keyA=$('key-a'), keyB=$('key-b'), keyL=padMove.children[0], keyR=padMove.children[1];
+const padMove=$('pad-move'), padAct=$('pad-act'), keyA=$('key-a'), keyB=$('key-b'), keyL=padMove.children[0], keyR=padMove.children[1], keyU=padMove.children[2], keyD=padMove.children[3];
 function evalTouches(ev){
-  let l=false,r=false,a=false,b=false;
+  let l=false,r=false,u=false,d=false,a=false,b=false;
   const rm=padMove.getBoundingClientRect(), rp=padAct.getBoundingClientRect(), ra=keyA.getBoundingClientRect(), rb=keyB.getBoundingClientRect();
   const ax=ra.left+ra.width/2, ay=ra.top+ra.height/2, bx=rb.left+rb.width/2, by=rb.top+rb.height/2, rad=ra.width/2+26;
   const mid=(rm.right+rp.left)/2; /* a thumb left of this line only steers, right of it only acts */
   for(let i=0;i<ev.touches.length;i++){ const t=ev.touches[i], x=t.clientX, y=t.clientY;
-    if(x<mid){ if(x>rm.left-40&&y>rm.top-48&&y<rm.bottom+48){ if(x<rm.left+rm.width/2) l=true; else r=true; } }
+    if(x<mid){ if(x>rm.left-40&&y>rm.top-48&&y<rm.bottom+48){ const dx=x-(rm.left+rm.width/2), dy=y-(rm.top+rm.height/2);
+        /* on the map the pad is a cross, and whichever arm the thumb is nearest wins */
+        if(mapOn&&Math.abs(dy)>Math.abs(dx)){ if(dy<0) u=true; else d=true; } else if(dx<0) l=true; else r=true; } }
     else { if(Math.hypot(x-ax,y-ay)<rad) a=true; if(Math.hypot(x-bx,y-by)<rad) b=true; } }
-  tk.left=l; tk.right=r; tk.jump=a; tk.run=b;
-  keyL.classList.toggle('on',l); keyR.classList.toggle('on',r); keyA.classList.toggle('on',a); keyB.classList.toggle('on',b);
+  tk.left=l; tk.right=r; tk.up=u; tk.down=d; tk.jump=a; tk.run=b;
+  keyL.classList.toggle('on',l); keyR.classList.toggle('on',r); keyU.classList.toggle('on',u); keyD.classList.toggle('on',d); keyA.classList.toggle('on',a); keyB.classList.toggle('on',b);
 }
 function onTouch(e){
   if(!isTouch){ isTouch=true; layout(); }
@@ -280,7 +300,8 @@ function layout(){
   let lift=0.34*V;
   if(isTouch&&!portrait){
     const sb=stage.getBoundingClientRect().bottom; let top=sb;
-    for(const k of [keyL,keyR,keyA,keyB]) top=Math.min(top,k.getBoundingClientRect().top);
+    /* measured from the pads, not the keys: a key shifts down while it is pressed, and A is down when a level starts from the map */
+    for(const k of [padMove,padAct]) top=Math.min(top,k.getBoundingClientRect().top);
     const n=clamp(1-2*(sb-top+6)/sh,0.1,1);
     lift=Math.min(lift,n*V/(2*(Math.cos(0.19)-n*Math.sin(0.19)*Math.tan(15*Math.PI/180))));
   }
@@ -300,6 +321,7 @@ function frame(now){
   pollInput();
   if(G.state==='card'){ G.cardT-=dt; if(G.cardT<=0){ show(null); G.state='play'; acc=0; input.jumpBuf=0; input.runEdge=false; musicStart(L.theme); } }
   if(G.state==='play'){ acc+=dt; let n=0; while(acc>=STEP&&n<16&&G.state==='play'){ step(STEP); acc-=STEP; n++; } if(n>=16) acc=0; }
+  if(G.state==='map') mapInput(); /* which may start a level, so the state is looked at again */
   if(G.state==='map'){ G.time+=dt; mapTick(dt,heldDir(),input.run); animFx(dt); mapViewFrame(dt,G.time); }
   else if(G.state!=='pause'){ G.time+=dt; animate(dt,G.time); updateCamera(dt,false); }
   updateHud();
