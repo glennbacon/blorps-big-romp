@@ -290,6 +290,22 @@ const checks=[
   ['the map sounds are safe when the browser has no sound',()=>{
     const m=game(); m.sfx.mapHop(); m.sfx.mapNo(); m.sfx.mapTile(3); m.sfx.mapOpen(); m.sfx.mapPlay(); m.musicStart('map'); m.musicStop();
   }],
+  ['the map tune goes quiet while the page is hidden, and comes back with it',()=>{
+    const m=game(), log=listen(m,['musicPause']); m.act('start');
+    m.document.hidden=true; m.pageHidden(); assert.deepStrictEqual(log.splice(0),['musicPause true']);
+    m.document.hidden=false; m.pageHidden(); assert.deepStrictEqual(log.splice(0),['musicPause false']);
+    assert.strictEqual(m.G.state,'map');
+  }],
+  ['a level still pauses when the page is hidden',()=>{
+    const m=game(); m.act('start'); m.mapEnter(); m.G.state='play'; m.document.hidden=true; m.pageHidden();
+    assert.strictEqual(m.G.state,'pause');
+  }],
+  ['Blorp cannot dodge a death by pausing and leaving for the map',()=>{
+    const m=game(); m.act('start'); m.mapEnter(); m.G.state='play'; m.player.form=2; m.player.dead=true;
+    m.togglePause(); m.act('map'); m.act('restart');
+    assert.deepStrictEqual([m.G.state,m.player.dead,m.G.lives],['play',true,3],'the game let him pause or leave while dying');
+    m.afterDeath(); assert.deepStrictEqual([m.G.lives,m.player.form],[2,0]);
+  }],
   ['arriving at a marker saves where Blorp stands',()=>{
     const s=storage(), m=game(s); m.act('start'); m.G.open=3; go(m,m.mapDirAt(0).fwd);
     assert.strictEqual(saved(s).level,1); assert.strictEqual(m.G.levelIdx,1);

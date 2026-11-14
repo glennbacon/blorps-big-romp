@@ -104,7 +104,8 @@ body.map #map-banner{position:absolute;left:50%;top:10px;margin:0;transform:tran
 #map-banner.note #map-note{display:inline}
 #map-banner.note .map-hint{display:none}
 body.map #b-pause,body.map #h-level{display:none} /* nothing to pause, and the banner says where Blorp is */
-@media (max-width:760px){body.map #map-banner{top:calc(2em + 34px)}} /* no room beside the HUD chips: sit under them */
+/* The banner can be 630px wide and the chips either side take 180px each, so on anything narrower it sits under them. */
+@media (max-width:1040px){body.map #map-banner{top:calc(2em + 34px)}}
 
 /* ---------- touch deck ---------- */
 #deck{display:none}

@@ -143,8 +143,9 @@ function beginLevel(fromCp){
   $('card-eyebrow').textContent='World '+(L.world+1)+' \u00b7 Level '+(L.stage+1)+' of '+L.stages; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
   show('s-card'); musicStop();
 }
+/* There is no pausing while Blorp is dying: the pause screen's ways out would let him off the life he just lost. */
 function togglePause(){
-  if(G.state==='play'){ G.state='pause'; show('s-pause'); musicPause(true); sfx.pause(); }
+  if(G.state==='play'&&!player.dead){ G.state='pause'; show('s-pause'); musicPause(true); sfx.pause(); }
   else if(G.state==='pause'){ G.state='play'; show(null); musicPause(false); acc=0; }
 }
 function afterDeath(){
@@ -170,7 +171,7 @@ function act(a){
   if(a==='start'){ G.score=0; G.coins=0; G.lives=3; G.open=0; G.levelIdx=0; player.form=0; showMap(-1); }
   else if(a==='continue'&&saved){ G.score=saved.score|0; G.coins=saved.coins|0; G.lives=Math.max(1,saved.lives|0); G.open=saved.open; G.levelIdx=saved.level; player.form=clamp(saved.form|0,0,2); showMap(-1); }
   else if(a==='resume') togglePause();
-  else if(a==='restart'){ G.cp=false; player.form=0; beginLevel(false); }
+  else if(a==='restart'&&G.state==='pause'){ G.cp=false; player.form=0; beginLevel(false); }
   else if(a==='map'&&(G.state==='clear'||G.state==='over'||G.state==='win'||G.state==='pause')){
     if(G.state==='over'){ G.score=0; G.coins=0; G.lives=3; player.form=0; }
     const seg=G.state==='clear'?newPath:-1; newPath=-1; showMap(seg);
@@ -185,7 +186,9 @@ function toggleSound(){ setMuted(!AU.muted); const b=$('b-sound'); b.classList.t
 $('overlay').addEventListener('click',e=>{ const b=e.target.closest('[data-act]'); if(b){ b.blur(); act(b.dataset.act); } });
 $('b-pause').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); togglePause(); });
 $('b-sound').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); toggleSound(); });
-document.addEventListener('visibilitychange',()=>{ if(document.hidden&&G.state==='play') togglePause(); });
+/* A hidden page pauses a level. The map has nothing to pause, but its tune goes quiet until the page is back. */
+function pageHidden(){ if(G.state==='map') musicPause(document.hidden); else if(document.hidden&&G.state==='play') togglePause(); }
+document.addEventListener('visibilitychange',pageHidden);
 
 /* ================= the map between levels ================= */
 /* The map and a level never show together. Switching also re-runs the layout, because the touch keys are laid out
