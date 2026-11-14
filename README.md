@@ -54,6 +54,10 @@ Each world has five levels, and each level has its own sky and light.
 
 **Also:** springshrooms, one-way ledges, moving platforms and a checkpoint in each level.
 
+**Saved progress**
+
+The game remembers the level you reached, with your score, coins, lives and power-up, in the browser's local storage. Next time, the title screen offers **Continue** at that level; **New game** starts over. Continue restarts the level from its beginning, not from the checkpoint. Finishing the game clears the save. If the browser blocks storage, the game still plays but forgets where you were.
+
 ## Physics
 
 Walking, running, skidding and jumping use the NES Super Mario Bros. speeds and gravities, converted from pixels per frame to tiles per second. Jump height depends on how long the button is held and on how fast Blorp is moving at takeoff. Two deliberate departures: the jump is slightly stronger (about 4.2 tiles standing, 5 running), and there is a little jump buffering and ledge forgiveness so touch controls feel fair.
@@ -75,7 +79,8 @@ The simulation runs at a fixed 120 steps per second, independent of frame rate.
 | `src/tail.html` | Closing markup |
 | `build.sh` | Joins the pieces in `src/` into `index.html` |
 | `tools/check-levels.js` | Proves that every level can be finished |
-| `tools/game.js` | Loads the game code into Node for the level check |
+| `tools/check-save.js` | Checks that progress is saved and offered back as Continue |
+| `tools/game.js` | Loads the game code into Node for the two checks |
 
 ## Build
 
@@ -85,15 +90,18 @@ The simulation runs at a fixed 120 steps per second, independent of frame rate.
 
 This needs only bash. If Node.js is installed, the script also checks the game script for syntax errors.
 
-## Check the levels
+## Checks
 
 ```bash
 node tools/check-levels.js          # every level, about two minutes
 node tools/check-levels.js 4-2      # one level
 node tools/check-levels.js --map 4-2  # print a level as text
+node tools/check-save.js            # saved progress and Continue
 ```
 
-This needs Node.js and nothing else. It loads the game code from `src/` with the 3D and page layers stubbed out, then has a search bot play each level with the real rules until it reaches the flag or beats the boss. Each level is played as small Blorp and as big Blorp, and the bot jumps 5% lower than a player can. It also reports common slips, such as a monster placed in mid-air. Run it after editing a level.
+These need Node.js and nothing else. The level check loads the game code from `src/` with the 3D and page layers stubbed out, then has a search bot play each level with the real rules until it reaches the flag or beats the boss. Each level is played as small Blorp and as big Blorp, and the bot jumps 5% lower than a player can. It also reports common slips, such as a monster placed in mid-air. Run it after editing a level.
+
+The save check starts the game the way a page load does, with a stand-in for the browser's storage, and checks what is saved at each point and what the title screen offers afterwards.
 
 ## Editing levels
 

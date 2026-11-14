@@ -2184,9 +2184,21 @@ function show(id){
   for(const s of ov.querySelectorAll('.screen')) s.hidden=s.id!==id;
   if(id&&!isTouch){ const b=$(id).querySelector('.btn'); if(b){ try{ b.focus({preventScroll:true}); }catch(e){} } }
 }
+/* Progress is kept in the browser so "Continue" on the title screen can pick it up after the page is closed.
+   Storage can be missing or blocked (private windows, embedded pages), so every use is allowed to fail quietly. */
+const SAVE_KEY='blorps-big-romp.save';
+function writeSave(level,fresh){
+  const d=fresh?{level,score:0,coins:0,lives:3,form:0}:{level,score:G.score,coins:G.coins,lives:G.lives,form:player.form};
+  try{ window.localStorage.setItem(SAVE_KEY,JSON.stringify(d)); }catch(e){}
+}
+function clearSave(){ try{ window.localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function readSave(){
+  try{ const d=JSON.parse(window.localStorage.getItem(SAVE_KEY)); if(d&&Number.isInteger(d.level)&&d.level>=0&&d.level<LEVELS.length) return d; }catch(e){}
+  return null;
+}
 function beginLevel(fromCp){
   G.bossSeen=false; G.bossDead=false;
-  loadLevel(G.levelIdx,fromCp);
+  loadLevel(G.levelIdx,fromCp); writeSave(G.levelIdx);
   G.state='card'; G.cardT=1.8; acc=0; input.jumpBuf=0; input.runEdge=false;
   $('card-eyebrow').textContent='World '+(L.world+1)+' \u00b7 Level '+(L.stage+1)+' of '+L.stages; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
   show('s-card'); musicStop();
@@ -2198,16 +2210,16 @@ function togglePause(){
 }
 function afterDeath(){
   G.lives--; player.form=0;
-  if(G.lives<=0){ G.state='over'; show('s-over'); sfx.over(); }
+  if(G.lives<=0){ G.state='over'; writeSave(G.levelIdx,true); show('s-over'); sfx.over(); }
   else beginLevel(G.cp);
 }
 function levelClear(){
-  G.state='clear';
+  G.state='clear'; writeSave(Math.min(G.levelIdx+1,LEVELS.length-1));
   $('clear-eyebrow').textContent='Level '+L.label+' clear'; $('clear-name').textContent=L.name; $('clear-score').textContent=G.score; $('clear-coins').textContent=G.coins;
   $('clear-note').hidden=!L.boss; $('btn-next').textContent=L.stage===L.stages-1?'Next world':'Next level';
   show('s-clear');
 }
-function showWin(){ G.state='win'; $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
+function showWin(){ G.state='win'; clearSave(); $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
 function act(a){
   auInit();
   if(a==='start'||a==='again') newGame(0);
@@ -2218,7 +2230,7 @@ function act(a){
   else if(a==='retry'){ const i=G.levelIdx; newGame(i); }
 }
 function primaryAction(){
-  const a={title:'start',pause:'resume',clear:'next',over:'retry',win:'again'}[G.state];
+  const a={title:saved?'continue':'start',pause:'resume',clear:'next',over:'retry',win:'again'}[G.state];
   if(!a) return false; act(a); return true;
 }
 function toggleSound(){ setMuted(!AU.muted); const b=$('b-sound'); b.classList.toggle('off',AU.muted); b.setAttribute('aria-pressed',String(!AU.muted)); }
@@ -2321,7 +2333,12 @@ if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,score:G.score,co
 function boot(data){
   layout();
   loadLevel(0,false);
-  if(data&&data.playing){ saved=data; const b=$('btn-continue'); b.hidden=false; b.textContent='Continue at '+LABELS[clamp(data.level|0,0,LEVELS.length-1)]; }
+  saved=data&&data.playing?data:readSave();
+  if(saved){
+    /* Continue becomes the main button, so a stray Enter cannot start over and overwrite the save */
+    const b=$('btn-continue'), n=$('btn-start'); b.hidden=false; b.textContent='Continue at '+LABELS[clamp(saved.level|0,0,LEVELS.length-1)];
+    b.classList.remove('quiet'); n.classList.add('quiet'); n.textContent='New game'; n.before(b);
+  }
   show('s-title');
   lastT=performance.now();
   requestAnimationFrame(frame);
