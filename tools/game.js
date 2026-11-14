@@ -1,7 +1,7 @@
 /* Loads the game code from src/ into Node, with three.js and the page stubbed out, so a tool can drive the real rules. */
 'use strict';
 const fs=require('fs'), path=require('path');
-const PARTS=['a_art','b_levels','c_audio','d_world','e_play','f_flow'];
+const PARTS=['a_art','b_levels','c_audio','d_world','e_play','f_map','g_mapview','h_flow'];
 const code=PARTS.map(f=>fs.readFileSync(path.join(__dirname,'..','src',f+'.js'),'utf8')).join('\n');
 
 /* Anything asked of a stub answers with another stub; in arithmetic a stub counts as 0. Values set on a stub are kept. */

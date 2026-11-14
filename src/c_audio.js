@@ -55,7 +55,13 @@ const sfx={
   bossHit(){ tone('sawtooth',300,70,0.3,0.2); hiss(0.15,0.2,0,300); },
   spit(){ tone('square',300,640,0.09,0.09); },
   shatter(){ hiss(0.12,0.2,0,2500); tone('square',1500,700,0.08,0.06); },
-  win(){ jingle('square','C5 C5 C5 E5 G5 . E5 G5 C6 . C6 E6 G6 . . C7',0.11,0.12,0.24); jingle('triangle','C3 . . C3 G3 . . G3 C4 . . E4 G4 . . C4',0.11,0.3,0.24); }
+  win(){ jingle('square','C5 C5 C5 E5 G5 . E5 G5 C6 . C6 E6 G6 . . C7',0.11,0.12,0.24); jingle('triangle','C3 . . C3 G3 . . G3 C4 . . E4 G4 . . C4',0.11,0.3,0.24); },
+  /* the map: a hop along the path, a way that is shut, a tile of new path (rising as the path grows), a marker opening, a level chosen */
+  mapHop(){ tone('triangle',560,760,0.06,0.16); },
+  mapNo(){ tone('triangle',150,95,0.12,0.36); },
+  mapTile(k){ tone('square',392*Math.pow(2,(k%12)/6),0,0.07,0.07); },
+  mapOpen(){ jingle('square','C5 E5 G5 C6',0.065,0.1,0.14); },
+  mapPlay(){ jingle('square','G4 C5 E5 G5 C6',0.045,0.1,0.09); }
 };
 
 /* tiny step sequencer: one token per eighth note. '.' rest, '-' hold */
@@ -95,7 +101,13 @@ const SONGS={
     'E5 . G5 B5 E6 . B5 G5  F#5 - G5 . E5 - . .  C5 . E5 G5 C6 . G5 E5  D5 - E5 . G5 - . . '+
     'A5 . C6 E6 A5 . C6 E6  G6 - E6 . C6 - A5 .  B5 . D#6 . F#6 . D#6 .  B5 D#6 F#6 B6 F#6 D#6 B5 .',
     'E2 E2 E3 E2 E2 E2 E3 E2  E2 E2 E3 E2 E2 E2 E3 E2  C3 C3 C3 C3 C3 C3 G2 G2  C3 C3 C3 C3 C3 C3 G2 G2 '+
-    'A2 A2 A2 A2 A2 A2 E3 E3  A2 A2 A2 A2 A2 A2 E3 E3  B2 B2 B2 B2 B2 B2 F#3 F#3  B2 B2 B2 B2 B2 D#3 F#3 B3')
+    'A2 A2 A2 A2 A2 A2 E3 E3  A2 A2 A2 A2 A2 A2 E3 E3  B2 B2 B2 B2 B2 B2 F#3 F#3  B2 B2 B2 B2 B2 D#3 F#3 B3'),
+  /* the world map: an easy stroll, slower than any level */
+  map:song(112,'triangle',
+    'G4 . C5 . E5 - D5 C5  D5 . G4 . B4 - - .  A4 . C5 . F5 - E5 D5  E5 . C5 . G4 - - . '+
+    'G4 . C5 . E5 - G5 E5  F5 . D5 . B4 - A4 B4  C5 . E5 . D5 . B4 .  C5 - - . G4 . . .',
+    'C3 . G3 . C3 . G3 .  G2 . D3 . G2 . D3 .  F2 . C3 . F2 . C3 .  C3 . G3 . C3 . G3 . '+
+    'C3 . G3 . E3 . G3 .  G2 . D3 . G2 . D3 .  A2 . E3 . G2 . D3 .  C3 . G2 . C3 . . .')
 };
 const LEAD_VOL={square:0.07,sawtooth:0.05,triangle:0.2,sine:0.22};
 const mus={song:null,step:0,next:0,timer:0,rate:1,paused:false};

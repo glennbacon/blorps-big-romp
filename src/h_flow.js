@@ -1,14 +1,19 @@
 /* ================= level loading ================= */
-function loadLevel(idx,fromCp){
+/* Throw away whatever level is loaded: its meshes, its lists, and any effects still in the air. */
+function unloadLevel(){
   disposeWorld();
+  blockMesh.clear(); multi.clear(); enemies=[]; items=[]; shots=[]; bombs=[]; plats=[]; springs=[]; firebars=[]; bumps=[];
+  coinMesh=null; liquidTex=null; sunMesh=null; flagMesh=null; cpFlag=null; motes=null;
+  for(const p of PARTS){ p.life=0; p.mesh.visible=false; }
+  for(const s of POPS){ s.life=0; s.sp.visible=false; }
+  for(const c of CPOPS){ c.t=-1; c.mesh.visible=false; }
+}
+function loadLevel(idx,fromCp){
+  unloadLevel();
   G.levelIdx=idx; L=LEVELS[idx](); W=L.W; tiles=L.tiles; M=themeMats(L.theme);
   /* each level in a world can restyle the sky and light a little, so five levels do not look like one */
   const base=THEMES[L.theme]; TH=Object.assign({},base,base.looks&&base.looks[L.stage]); GRAV=TH.grav||1;
   applyTheme();
-  blockMesh.clear(); multi.clear(); enemies=[]; items=[]; shots=[]; bombs=[]; plats=[]; springs=[]; firebars=[]; bumps=[];
-  for(const p of PARTS){ p.life=0; p.mesh.visible=false; }
-  for(const s of POPS){ s.life=0; s.sp.visible=false; }
-  for(const c of CPOPS){ c.t=-1; c.mesh.visible=false; }
   buildTerrain(); buildBlocks(); buildPipes(); buildSpikes(); buildCoins(); buildLiquid(); buildScenery(); buildGoal(); buildCheckpoint();
   for(const d of L.enemies) spawnEnemy(d);
   if(L.boss) spawnEnemy(Object.assign({type:'boss'},L.boss));
@@ -72,6 +77,15 @@ function animEnemies(dt,time){
     else if(e.type==='boss'){ m.rotation.y=(player.x>e.x?1:-1)*0.75; m.rotation.z=e.onGround?Math.sin(time*8)*0.05:0; m.visible=!(e.inv>0&&((time*24|0)%2)); }
   }
 }
+/* the pooled effects: flying bits, score pop-ups and coins from blocks. The map uses them too. */
+function animFx(dt){
+  for(const p of PARTS){ if(p.life<=0) continue; p.life-=dt; if(p.life<=0){ p.mesh.visible=false; continue; }
+    p.vy-=p.grav*dt; const m=p.mesh; m.position.x+=p.vx*dt; m.position.y+=p.vy*dt; m.position.z+=p.vz*dt; m.rotation.x+=dt*8; m.rotation.z+=dt*6; m.scale.setScalar(p.size*Math.min(1,p.life/p.max*2)); }
+  for(const s of POPS){ if(s.life<=0) continue; s.life-=dt; if(s.life<=0){ s.sp.visible=false; continue; } s.sp.position.y+=dt*1.5; s.sp.material.opacity=Math.min(1,s.life*4); }
+  for(const c of CPOPS){ if(c.t<0) continue; c.t+=dt;
+    if(c.t>0.55){ c.t=-1; c.mesh.visible=false; popup(c.x,c.y+1.1,'200','#ffe14d'); continue; }
+    c.mesh.position.set(c.x,c.y+13*c.t-20*c.t*c.t,0); c.mesh.rotation.y=c.t*26; }
+}
 function animate(dt,time){
   animPlayer(dt,time); animEnemies(dt,time);
   for(const it of items){ it.mesh.position.set(it.x,it.y,0);
@@ -89,12 +103,7 @@ function animate(dt,time){
       _d.updateMatrix(); coinMesh.setMatrixAt(i,_d.matrix); }
     coinMesh.instanceMatrix.needsUpdate=true;
   }
-  for(const p of PARTS){ if(p.life<=0) continue; p.life-=dt; if(p.life<=0){ p.mesh.visible=false; continue; }
-    p.vy-=p.grav*dt; const m=p.mesh; m.position.x+=p.vx*dt; m.position.y+=p.vy*dt; m.position.z+=p.vz*dt; m.rotation.x+=dt*8; m.rotation.z+=dt*6; m.scale.setScalar(p.size*Math.min(1,p.life/p.max*2)); }
-  for(const s of POPS){ if(s.life<=0) continue; s.life-=dt; if(s.life<=0){ s.sp.visible=false; continue; } s.sp.position.y+=dt*1.5; s.sp.material.opacity=Math.min(1,s.life*4); }
-  for(const c of CPOPS){ if(c.t<0) continue; c.t+=dt;
-    if(c.t>0.55){ c.t=-1; c.mesh.visible=false; popup(c.x,c.y+1.1,'200','#ffe14d'); continue; }
-    c.mesh.position.set(c.x,c.y+13*c.t-20*c.t*c.t,0); c.mesh.rotation.y=c.t*26; }
+  animFx(dt);
   if(liquidTex) liquidTex.offset.x=time*0.12;
   const bl=(time%3.6)>3.45; if(bl!==blinkOn){ blinkOn=bl; eyeMat.map=bl?texEyeShut:texEyeOpen; }
   if(flagMesh) flagMesh.rotation.y=Math.sin(time*3)*0.18;
@@ -110,28 +119,33 @@ function show(id){
   for(const s of ov.querySelectorAll('.screen')) s.hidden=s.id!==id;
   if(id&&!isTouch){ const b=$(id).querySelector('.btn'); if(b){ try{ b.focus({preventScroll:true}); }catch(e){} } }
 }
-/* Progress is kept in the browser so "Continue" on the title screen can pick it up after the page is closed.
+/* Progress is kept in the browser so "Continue" on the title screen can pick it up after the page is closed:
+   `level` is the marker Blorp stands on and `open` the furthest level opened (see f_map.js).
    Storage can be missing or blocked (private windows, embedded pages), so every use is allowed to fail quietly. */
 const SAVE_KEY='blorps-big-romp.save';
 function writeSave(level,fresh){
-  const d=fresh?{level,score:0,coins:0,lives:3,form:0}:{level,score:G.score,coins:G.coins,lives:G.lives,form:player.form};
+  const d=fresh?{level,open:G.open,score:0,coins:0,lives:3,form:0}:{level,open:G.open,score:G.score,coins:G.coins,lives:G.lives,form:player.form};
   try{ window.localStorage.setItem(SAVE_KEY,JSON.stringify(d)); }catch(e){}
 }
-function clearSave(){ try{ window.localStorage.removeItem(SAVE_KEY); }catch(e){} }
-function readSave(){
-  try{ const d=JSON.parse(window.localStorage.getItem(SAVE_KEY)); if(d&&Number.isInteger(d.level)&&d.level>=0&&d.level<LEVELS.length) return d; }catch(e){}
-  return null;
+/* Make sense of something that claims to be a save, or return null. A save from before the map has no `open`:
+   everything up to its level counts as open. One whose `open` cannot be right is read the same way. */
+function checkSave(d){
+  if(!d||!Number.isInteger(d.level)||d.level<0||d.level>=LEVELS.length) return null;
+  if(!Number.isInteger(d.open)||d.open<d.level||d.open>LEVELS.length) d.open=d.level;
+  return d;
 }
+function readSave(){ try{ return checkSave(JSON.parse(window.localStorage.getItem(SAVE_KEY))); }catch(e){} return null; }
 function beginLevel(fromCp){
   G.bossSeen=false; G.bossDead=false;
+  mapMode(false);
   loadLevel(G.levelIdx,fromCp); writeSave(G.levelIdx);
   G.state='card'; G.cardT=1.8; acc=0; input.jumpBuf=0; input.runEdge=false;
   $('card-eyebrow').textContent='World '+(L.world+1)+' \u00b7 Level '+(L.stage+1)+' of '+L.stages; $('card-name').textContent=L.name; $('card-lives').textContent=G.lives;
   show('s-card'); musicStop();
 }
-function newGame(level){ G.score=0; G.coins=0; G.lives=3; G.levelIdx=level||0; G.cp=false; player.form=0; beginLevel(false); }
+/* There is no pausing while Blorp is dying: the pause screen's ways out would let him off the life he just lost. */
 function togglePause(){
-  if(G.state==='play'){ G.state='pause'; show('s-pause'); musicPause(true); sfx.pause(); }
+  if(G.state==='play'&&!player.dead){ G.state='pause'; show('s-pause'); musicPause(true); sfx.pause(); }
   else if(G.state==='pause'){ G.state='play'; show(null); musicPause(false); acc=0; }
 }
 function afterDeath(){
@@ -139,64 +153,126 @@ function afterDeath(){
   if(G.lives<=0){ G.state='over'; writeSave(G.levelIdx,true); show('s-over'); sfx.over(); }
   else beginLevel(G.cp);
 }
+/* Clearing a level for the first time opens the next one. The new stretch of path is shown appearing once Blorp is
+   back on the map; after the last level there is no more path to show. */
+let newPath=-1;
 function levelClear(){
-  G.state='clear'; writeSave(Math.min(G.levelIdx+1,LEVELS.length-1));
+  const first=G.levelIdx>=G.open; if(first) G.open=G.levelIdx+1;
+  newPath=first&&G.levelIdx<MAPSEGS.length?G.levelIdx:-1;
+  G.state='clear'; writeSave(G.levelIdx);
   $('clear-eyebrow').textContent='Level '+L.label+' clear'; $('clear-name').textContent=L.name; $('clear-score').textContent=G.score; $('clear-coins').textContent=G.coins;
-  $('clear-note').hidden=!L.boss; $('btn-next').textContent=L.stage===L.stages-1?'Next world':'Next level';
+  $('clear-note').hidden=!L.boss;
   show('s-clear');
 }
-function showWin(){ G.state='win'; clearSave(); $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
+/* Beating the last level opens nothing new, but it still counts: `open` runs one past the end so its marker reads as cleared. */
+function showWin(){ G.open=LEVELS.length; newPath=-1; G.state='win'; writeSave(G.levelIdx); $('win-score').textContent=G.score; $('win-coins').textContent=G.coins; show('s-win'); }
 function act(a){
   auInit();
-  if(a==='start'||a==='again') newGame(0);
-  else if(a==='continue'&&saved){ G.score=saved.score|0; G.coins=saved.coins|0; G.lives=Math.max(1,saved.lives|0); G.levelIdx=clamp(saved.level|0,0,LEVELS.length-1); G.cp=false; player.form=clamp(saved.form|0,0,2); beginLevel(false); }
+  if(a==='start'){ G.score=0; G.coins=0; G.lives=3; G.open=0; G.levelIdx=0; player.form=0; showMap(-1); }
+  else if(a==='continue'&&saved){ G.score=saved.score|0; G.coins=saved.coins|0; G.lives=Math.max(1,saved.lives|0); G.open=saved.open; G.levelIdx=saved.level; player.form=clamp(saved.form|0,0,2); showMap(-1); }
   else if(a==='resume') togglePause();
-  else if(a==='restart'){ G.cp=false; player.form=0; beginLevel(false); }
-  else if(a==='next'){ G.levelIdx=Math.min(G.levelIdx+1,LEVELS.length-1); G.cp=false; beginLevel(false); }
-  else if(a==='retry'){ const i=G.levelIdx; newGame(i); }
+  else if(a==='restart'&&G.state==='pause'){ G.cp=false; player.form=0; beginLevel(false); }
+  else if(a==='map'&&(G.state==='clear'||G.state==='over'||G.state==='win'||G.state==='pause')){
+    if(G.state==='over'){ G.score=0; G.coins=0; G.lives=3; player.form=0; }
+    const seg=G.state==='clear'?newPath:-1; newPath=-1; showMap(seg);
+  }
 }
 function primaryAction(){
-  const a={title:saved?'continue':'start',pause:'resume',clear:'next',over:'retry',win:'again'}[G.state];
+  if(G.state==='map') return mapEnter();
+  const a={title:saved?'continue':'start',pause:'resume',clear:'map',over:'map',win:'map'}[G.state];
   if(!a) return false; act(a); return true;
 }
 function toggleSound(){ setMuted(!AU.muted); const b=$('b-sound'); b.classList.toggle('off',AU.muted); b.setAttribute('aria-pressed',String(!AU.muted)); }
 $('overlay').addEventListener('click',e=>{ const b=e.target.closest('[data-act]'); if(b){ b.blur(); act(b.dataset.act); } });
 $('b-pause').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); togglePause(); });
 $('b-sound').addEventListener('click',e=>{ auInit(); e.currentTarget.blur(); toggleSound(); });
-document.addEventListener('visibilitychange',()=>{ if(document.hidden&&G.state==='play') togglePause(); });
+/* A hidden page pauses a level. The map has nothing to pause, but its tune goes quiet until the page is back. */
+function pageHidden(){ if(G.state==='map') musicPause(document.hidden); else if(document.hidden&&G.state==='play') togglePause(); }
+document.addEventListener('visibilitychange',pageHidden);
+
+/* ================= the map between levels ================= */
+/* The map and a level never show together. Switching also re-runs the layout, because the touch keys are laid out
+   differently on the map and the level camera measures itself against them. */
+let mapOn=false;
+function mapMode(on){ if(mapOn===on) return; mapOn=on; document.body.classList.toggle('map',on); mapViewShow(on); layout(); }
+/* Go to the map, with Blorp on the marker of the level he was last on. `seg` is a stretch of path to show
+   appearing, or -1. */
+function showMap(seg){
+  unloadLevel(); musicStop();
+  G.state='map'; G.cp=false; player.dead=false; setSize();
+  mapPlace(G.levelIdx); if(seg>=0) mapReveal(seg);
+  mapMode(true); mapViewSync(); mapBanner(); show(null);
+  padWas=padDir(); playWas=tk.jump; /* whatever is held on arriving does not count until it is let go */
+  writeSave(G.levelIdx); musicStart('map');
+}
+/* Play the level Blorp is standing on. Not while he is walking, and not while a path is appearing. */
+function mapEnter(){
+  if(G.state!=='map'||MAPST.walk||MAPST.reveal) return false;
+  G.levelIdx=MAPST.at; G.cp=false; sfx.mapPlay(); beginLevel(false); return true;
+}
+/* A direction was pressed on the map. */
+function mapPress(dir){
+  if(G.state!=='map') return;
+  const r=mapGo(dir);
+  if(r==='locked'){ sfx.mapNo(); mapBanner('Clear this level to open the path'); } else if(r==='none') sfx.mapNo();
+}
+/* The touch pad and the A key on the map. Only a fresh press counts. */
+let padWas=null, playWas=false;
+function mapInput(){
+  const d=padDir(), a=tk.jump;
+  if(d&&d!==padWas) mapPress(d);
+  if(a&&!playWas) mapEnter();
+  padWas=d; playWas=a;
+}
+/* f_map.js calls these as Blorp walks and as a new stretch of path appears */
+function mapStepped(){ sfx.mapHop(); }
+function mapArrived(){ G.levelIdx=MAPST.at; writeSave(G.levelIdx); mapBanner(); }
+function mapRevealed(seg,k,done){ mapViewSync(); mapViewPop(seg,k,done); if(done){ sfx.mapOpen(); mapBanner(); } else sfx.mapTile(k); }
 
 /* ================= input ================= */
-const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,jump:false,run:false};
+const kb={left:false,right:false,jump:false,run:false}, tk={left:false,right:false,up:false,down:false,jump:false,run:false};
 const KEYS={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyZ:'jump',KeyK:'jump',ShiftLeft:'run',ShiftRight:'run',KeyX:'run',KeyJ:'run'};
-window.addEventListener('keydown',e=>{
+/* On the map the arrows and W A S D walk Blorp north, east, south and west. Up and W jump in a level; here they are
+   only a direction, so they never start one. */
+const MAPKEYS={ArrowUp:'N',KeyW:'N',ArrowRight:'E',KeyD:'E',ArrowDown:'S',KeyS:'S',ArrowLeft:'W',KeyA:'W'}, kbDir={N:false,E:false,S:false,W:false};
+let lastDir='N';
+function keyDown(e){
   if(e.metaKey||e.ctrlKey||e.altKey) return;
-  const k=KEYS[e.code];
-  if(e.repeat){ if(k||e.code==='Enter') e.preventDefault(); return; }
+  const k=KEYS[e.code], d=MAPKEYS[e.code];
+  if(e.repeat){ if(k||d||e.code==='Enter') e.preventDefault(); return; }
   auInit();
-  if(e.code==='Enter'||(e.code==='Space'&&G.state!=='play')){ e.preventDefault(); primaryAction(); return; }
+  if(e.code==='Enter'||(e.code==='Space'&&G.state!=='play')||(G.state==='map'&&(e.code==='KeyZ'||e.code==='KeyK'))){ e.preventDefault(); primaryAction(); return; }
   if(e.code==='KeyP'||e.code==='Escape'){ e.preventDefault(); togglePause(); return; }
   if(e.code==='KeyM'){ toggleSound(); return; }
+  if(d){ kbDir[d]=true; lastDir=d; e.preventDefault(); if(G.state==='map') mapPress(d); }
   if(k){ kb[k]=true; e.preventDefault(); }
-});
-window.addEventListener('keyup',e=>{ const k=KEYS[e.code]; if(k){ kb[k]=false; e.preventDefault(); } });
-window.addEventListener('blur',()=>{ kb.left=kb.right=kb.jump=kb.run=false; });
+}
+function keyUp(e){ const k=KEYS[e.code], d=MAPKEYS[e.code]; if(d) kbDir[d]=false; if(k){ kb[k]=false; e.preventDefault(); } }
+window.addEventListener('keydown',keyDown);
+window.addEventListener('keyup',keyUp);
+window.addEventListener('blur',()=>{ kb.left=kb.right=kb.jump=kb.run=false; kbDir.N=kbDir.E=kbDir.S=kbDir.W=false; });
+const padDir=()=>tk.up?'N':tk.right?'E':tk.down?'S':tk.left?'W':null;
+/* the direction being held on the map: the key pressed last if it is still down, else any that is, else the touch pad */
+function heldDir(){ if(kbDir[lastDir]) return lastDir; for(const d in kbDir) if(kbDir[d]) return d; return padDir(); }
 function pollInput(){
   const j=kb.jump||tk.jump, r=kb.run||tk.run;
   if(j&&!input.jump) input.jumpBuf=0.11;
   if(r&&!input.run) input.runEdge=true;
   input.jump=j; input.run=r; input.left=kb.left||tk.left; input.right=kb.right||tk.right;
 }
-const padMove=$('pad-move'), padAct=$('pad-act'), keyA=$('key-a'), keyB=$('key-b'), keyL=padMove.children[0], keyR=padMove.children[1];
+const padMove=$('pad-move'), padAct=$('pad-act'), keyA=$('key-a'), keyB=$('key-b'), keyL=padMove.children[0], keyR=padMove.children[1], keyU=padMove.children[2], keyD=padMove.children[3];
 function evalTouches(ev){
-  let l=false,r=false,a=false,b=false;
+  let l=false,r=false,u=false,d=false,a=false,b=false;
   const rm=padMove.getBoundingClientRect(), rp=padAct.getBoundingClientRect(), ra=keyA.getBoundingClientRect(), rb=keyB.getBoundingClientRect();
   const ax=ra.left+ra.width/2, ay=ra.top+ra.height/2, bx=rb.left+rb.width/2, by=rb.top+rb.height/2, rad=ra.width/2+26;
   const mid=(rm.right+rp.left)/2; /* a thumb left of this line only steers, right of it only acts */
   for(let i=0;i<ev.touches.length;i++){ const t=ev.touches[i], x=t.clientX, y=t.clientY;
-    if(x<mid){ if(x>rm.left-40&&y>rm.top-48&&y<rm.bottom+48){ if(x<rm.left+rm.width/2) l=true; else r=true; } }
+    if(x<mid){ if(x>rm.left-40&&y>rm.top-48&&y<rm.bottom+48){ const dx=x-(rm.left+rm.width/2), dy=y-(rm.top+rm.height/2);
+        /* on the map the pad is a cross, and whichever arm the thumb is nearest wins */
+        if(mapOn&&Math.abs(dy)>Math.abs(dx)){ if(dy<0) u=true; else d=true; } else if(dx<0) l=true; else r=true; } }
     else { if(Math.hypot(x-ax,y-ay)<rad) a=true; if(Math.hypot(x-bx,y-by)<rad) b=true; } }
-  tk.left=l; tk.right=r; tk.jump=a; tk.run=b;
-  keyL.classList.toggle('on',l); keyR.classList.toggle('on',r); keyA.classList.toggle('on',a); keyB.classList.toggle('on',b);
+  tk.left=l; tk.right=r; tk.up=u; tk.down=d; tk.jump=a; tk.run=b;
+  keyL.classList.toggle('on',l); keyR.classList.toggle('on',r); keyU.classList.toggle('on',u); keyD.classList.toggle('on',d); keyA.classList.toggle('on',a); keyB.classList.toggle('on',b);
 }
 function onTouch(e){
   if(!isTouch){ isTouch=true; layout(); }
@@ -228,12 +304,13 @@ function layout(){
   let lift=0.34*V;
   if(isTouch&&!portrait){
     const sb=stage.getBoundingClientRect().bottom; let top=sb;
-    for(const k of [keyL,keyR,keyA,keyB]) top=Math.min(top,k.getBoundingClientRect().top);
+    /* measured from the pads, not the keys: a key shifts down while it is pressed, and A is down when a level starts from the map */
+    for(const k of [padMove,padAct]) top=Math.min(top,k.getBoundingClientRect().top);
     const n=clamp(1-2*(sb-top+6)/sh,0.1,1);
     lift=Math.min(lift,n*V/(2*(Math.cos(0.19)-n*Math.sin(0.19)*Math.tan(15*Math.PI/180))));
   }
   camBaseY=2+lift;
-  if(scene.fog&&TH){ scene.fog.near=camDist+TH.fogNear; scene.fog.far=camDist+TH.fogFar; }
+  if(scene.fog&&TH&&!mapOn){ scene.fog.near=camDist+TH.fogNear; scene.fog.far=camDist+TH.fogFar; } /* the map keeps its own haze */
 }
 window.addEventListener('resize',layout);
 const hudC={lives:-1,coins:-1,score:-1};
@@ -248,26 +325,28 @@ function frame(now){
   pollInput();
   if(G.state==='card'){ G.cardT-=dt; if(G.cardT<=0){ show(null); G.state='play'; acc=0; input.jumpBuf=0; input.runEdge=false; musicStart(L.theme); } }
   if(G.state==='play'){ acc+=dt; let n=0; while(acc>=STEP&&n<16&&G.state==='play'){ step(STEP); acc-=STEP; n++; } if(n>=16) acc=0; }
-  if(G.state!=='pause'){ G.time+=dt; animate(dt,G.time); updateCamera(dt,false); }
+  if(G.state==='map') mapInput(); /* which may start a level, so the state is looked at again */
+  if(G.state==='map'){ G.time+=dt; mapTick(dt,heldDir(),input.run); animFx(dt); mapViewFrame(dt,G.time); }
+  else if(G.state!=='pause'){ G.time+=dt; animate(dt,G.time); updateCamera(dt,false); }
   updateHud();
   renderer.render(scene,camera);
 }
 
 /* Keep progress when the page is republished while open. */
 const hot=window.claude&&window.claude.hot;
-if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,score:G.score,coins:G.coins,lives:G.lives,form:player.form,playing:G.state!=='title'})); }catch(e){} }
+if(hot&&hot.snapshot){ try{ hot.snapshot(()=>({level:G.levelIdx,open:G.open,score:G.score,coins:G.coins,lives:G.lives,form:player.form,playing:G.state!=='title'})); }catch(e){} }
 function boot(data){
   layout();
   loadLevel(0,false);
-  saved=data&&data.playing?data:readSave();
+  saved=data&&data.playing?checkSave(data):readSave();
   if(saved){
     /* Continue becomes the main button, so a stray Enter cannot start over and overwrite the save */
-    const b=$('btn-continue'), n=$('btn-start'); b.hidden=false; b.textContent='Continue at '+LABELS[clamp(saved.level|0,0,LEVELS.length-1)];
+    const b=$('btn-continue'), n=$('btn-start'); b.hidden=false; b.textContent='Continue at '+LABELS[saved.level];
     b.classList.remove('quiet'); n.classList.add('quiet'); n.textContent='New game'; n.before(b);
   }
   show('s-title');
   lastT=performance.now();
   requestAnimationFrame(frame);
 }
-window.__romp={G,player,input,kb,load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
+window.__romp={G,player,input,kb,MAPST,map:()=>showMap(-1),open:n=>{ G.open=n; mapViewSync(); mapBanner(); },at:i=>{ mapPlace(i); mapBanner(); },zoom:k=>{ mapZoom=k; },load:(i,cp)=>{ G.levelIdx=i; beginLevel(!!cp); },tp:(x,y)=>{ player.x=x; player.y=y; player.vx=player.vy=0; },form:f=>{ player.form=f; setSize(); },view:()=>({camX,camY,V,viewHalfW,W}),enemies:()=>enemies,items:()=>items,plats:()=>plats,step,solidAt,tileAt,L:()=>L,animate,updateCamera,info:()=>renderer.info.render};
 if(hot&&hot.ready) hot.ready(boot); else boot((hot&&hot.data)||{});

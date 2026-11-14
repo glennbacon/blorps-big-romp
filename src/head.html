@@ -90,6 +90,23 @@ body.portrait .tag{display:none} /* short stage: keep Blorp in view under the lo
 #nogl{position:absolute;inset:0;z-index:9;margin:0;display:grid;place-items:center;padding:24px;text-align:center;background:var(--ink);font-size:18px;line-height:1.4}
 #nogl[hidden]{display:none}
 
+/* ---------- the map ---------- */
+#map-banner{display:none}
+body.map #map-banner{position:absolute;left:50%;top:10px;margin:0;transform:translateX(-50%);z-index:3;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;
+  width:max-content;max-width:calc(100% - 24px);padding:8px 12px;background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:8px;box-shadow:0 6px 0 var(--ink);
+  font:700 clamp(16px,1.6vmin + 10px,22px)/1 var(--font-display);pointer-events:none}
+#map-label{padding:.25em .5em;background:var(--ink);color:var(--coin);border-radius:4px}
+#map-done{color:#0b8577}
+#map-done[hidden]{display:none}
+.map-hint,#map-note{font-size:.78em;font-weight:500}
+.map-hint b{color:var(--grape)}
+#map-note{display:none;color:#c2214f}
+#map-banner.note #map-note{display:inline}
+#map-banner.note .map-hint{display:none}
+body.map #b-pause,body.map #h-level{display:none} /* nothing to pause, and the banner says where Blorp is */
+/* The banner can be 630px wide and the chips either side take 180px each, so on anything narrower it sits under them. */
+@media (max-width:1040px){body.map #map-banner{top:calc(2em + 34px)}}
+
 /* ---------- touch deck ---------- */
 #deck{display:none}
 body.touch #deck{display:flex}
@@ -108,6 +125,16 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
 .key.round small{font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 .ka{right:0;top:0;background:var(--berry)}
 .kb{left:0;bottom:0;background:var(--coin)}
+body.map .in-level,body:not(.map) .on-map{display:none} /* A plays the level Blorp stands on */
+/* on the map the two arrows become a four-way cross; up and down are not shown in a level */
+.key[data-k=up],.key[data-k=down]{display:none}
+body.map #pad-move{display:grid;grid-template:repeat(3,58px)/repeat(3,58px);gap:0}
+body.map #pad-move .key{display:grid;width:58px;height:58px;border-radius:12px}
+body.map #pad-move .key svg{width:24px;height:24px}
+body.map #pad-move [data-k=left]{grid-area:2/1}
+body.map #pad-move [data-k=right]{grid-area:2/3}
+body.map #pad-move [data-k=up]{grid-area:1/2}
+body.map #pad-move [data-k=down]{grid-area:3/2}
 @media (prefers-reduced-motion:reduce){.btn:active,.key.on{transform:none}}
 </style>
 </head>
@@ -128,6 +155,9 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <button class="hud-btn" id="b-pause" type="button" aria-label="Pause"><svg viewBox="0 0 8 8" aria-hidden="true"><rect x="1.5" y="1" width="2" height="6" fill="currentColor"/><rect x="4.5" y="1" width="2" height="6" fill="currentColor"/></svg></button>
       </div>
     </div>
+
+    <p id="map-banner"><b id="map-label">1-1</b><span id="map-name">Gumdrop Meadow</span><span id="map-done" hidden>Cleared</span>
+      <span class="map-hint kbd-only"><b>Arrows</b> walk, <b>Space</b> plays</span><span class="map-hint touch-only"><b>A</b> plays</span><span id="map-note"></span></p>
 
     <div id="overlay" class="s-title">
       <section class="screen" id="s-title">
@@ -155,6 +185,7 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <h2>Paused</h2>
         <button class="btn" type="button" data-act="resume">Keep romping</button>
         <button class="btn quiet" type="button" data-act="restart">Restart this level</button>
+        <button class="btn quiet" type="button" data-act="map">Back to the map</button>
         <ul class="howto">
           <li class="kbd-only"><b>Arrows</b> or <b>A D</b> move</li>
           <li class="kbd-only"><b>Space</b> jump</li>
@@ -170,20 +201,20 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
         <h2 id="clear-name">Gumdrop Meadow</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="clear-score">0</dd></div><div><dt>Coins</dt><dd id="clear-coins">0</dd></div></dl>
         <p id="clear-note" hidden>King Grump scarpers off to his Comet Citadel.</p>
-        <button class="btn" type="button" data-act="next" id="btn-next">Next level</button>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
 
       <section class="screen card" id="s-over" hidden>
         <h2>Game over</h2>
-        <p>Blorp is out of lives. The score resets, the level does not.</p>
-        <button class="btn" type="button" data-act="retry">Try this level again</button>
+        <p>Blorp is out of lives. The score resets, the map does not.</p>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
 
       <section class="screen card" id="s-win" hidden>
         <p class="eyebrow">All 6 worlds clear</p>
         <h2>King Grump is toast</h2>
         <dl class="stats"><div><dt>Score</dt><dd id="win-score">0</dd></div><div><dt>Coins</dt><dd id="win-coins">0</dd></div></dl>
-        <button class="btn" type="button" data-act="again">Play again</button>
+        <button class="btn" type="button" data-act="map">Back to the map</button>
       </section>
     </div>
 
@@ -194,10 +225,12 @@ body.touch:not(.portrait) .pad-act{width:176px;height:94px} /* A beside B, not a
     <div class="pad" id="pad-move">
       <div class="key" data-k="left"><svg viewBox="0 0 8 8"><path d="M6 1v6L1 4z" fill="currentColor"/></svg></div>
       <div class="key" data-k="right"><svg viewBox="0 0 8 8"><path d="M2 1v6l5-3z" fill="currentColor"/></svg></div>
+      <div class="key" data-k="up"><svg viewBox="0 0 8 8"><path d="M1 6h6L4 1z" fill="currentColor"/></svg></div>
+      <div class="key" data-k="down"><svg viewBox="0 0 8 8"><path d="M1 2h6L4 7z" fill="currentColor"/></svg></div>
     </div>
     <div class="pad pad-act" id="pad-act">
       <div class="key round kb" data-k="run" id="key-b"><span>B</span><small>run</small></div>
-      <div class="key round ka" data-k="jump" id="key-a"><span>A</span><small>jump</small></div>
+      <div class="key round ka" data-k="jump" id="key-a"><span>A</span><small class="in-level">jump</small><small class="on-map">play</small></div>
     </div>
   </div>
 </div>
