@@ -6,6 +6,7 @@
 <title>Blorp's Big Romp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+20&text=0123456789&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Layout: full-bleed 3D stage; HUD chips pinned along the top edge; screens are centred paper cards.
@@ -16,13 +17,15 @@
   --berry:#ff4f7b;   /* hot pink: jump key, logo */
   --coin:#ffc928;    /* gold: primary button, run key */
   --grape:#7b4fe0;   /* purple: deck body, eyebrows */
-  --font-display:'Pixelify Sans','Trebuchet MS',Verdana,sans-serif;
-  --font-body:'Pixelify Sans','Trebuchet MS',Verdana,sans-serif;
+  /* Digits come from Jersey 20: at these sizes Pixelify's 2 and 5 close up and read as 8. Jersey 20 is fetched with
+     digits only, so every other character falls through to Pixelify Sans. */
+  --font-display:'Jersey 20','Pixelify Sans','Trebuchet MS',Verdana,sans-serif;
+  --font-body:'Jersey 20','Pixelify Sans','Trebuchet MS',Verdana,sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--ink);color:var(--paper);font-family:var(--font-body);font-weight:500;overflow:hidden;
+body{background:var(--ink);color:var(--paper);font-family:var(--font-body);font-weight:500;font-synthesis:none;overflow:hidden; /* Jersey 20 has one weight; a faked bold would blur the digits again */
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #app{height:100%;display:flex;flex-direction:column}
 #stage{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;touch-action:none;background:linear-gradient(#49b9ff,#9be4ff 55%,#ffeebd)}
@@ -1580,7 +1583,7 @@ const POPS=[], popTexCache={};
 function popTex(txt,col){
   const k=txt+col; if(popTexCache[k]) return popTexCache[k];
   const c=document.createElement('canvas'); c.width=256; c.height=64; const g=c.getContext('2d');
-  g.font='700 46px "Pixelify Sans","Trebuchet MS",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineJoin='round';
+  g.font='700 46px "Jersey 20","Pixelify Sans","Trebuchet MS",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineJoin='round';
   g.lineWidth=10; g.strokeStyle=INK; g.strokeText(txt,128,34); g.fillStyle=col; g.fillText(txt,128,34);
   const t=new T.CanvasTexture(c); return popTexCache[k]=t;
 }

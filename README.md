@@ -10,7 +10,7 @@ The whole game is one HTML file. There are no image or sound files: every model 
 
 Play online at <https://glennbacon.github.io/blorps-big-romp/>.
 
-To run it from a copy of this repository, open `index.html` in a current version of Chrome, Safari, Firefox or Edge. Nothing needs installing. An internet connection is needed either way because three.js and the font load from CDNs.
+To run it from a copy of this repository, open `index.html` in a current version of Chrome, Safari, Firefox or Edge. Nothing needs installing. An internet connection is needed either way because three.js and the fonts load from CDNs.
 
 ## Controls
 
@@ -139,6 +139,7 @@ For poking at a running game, the browser console has a `__romp` object with hel
 
 - [three.js](https://github.com/mrdoob/three.js) r128, MIT license, loaded from cdnjs.
 - [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans), SIL Open Font License, loaded from Google Fonts.
+- [Jersey 20](https://fonts.google.com/specimen/Jersey+20), SIL Open Font License, loaded from Google Fonts. It is used for the digits only: at small sizes Pixelify Sans's 2 and 5 are hard to tell from an 8.
 
 The characters, levels, art and music are original to this project.
 

@@ -341,7 +341,7 @@ const POPS=[], popTexCache={};
 function popTex(txt,col){
   const k=txt+col; if(popTexCache[k]) return popTexCache[k];
   const c=document.createElement('canvas'); c.width=256; c.height=64; const g=c.getContext('2d');
-  g.font='700 46px "Pixelify Sans","Trebuchet MS",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineJoin='round';
+  g.font='700 46px "Jersey 20","Pixelify Sans","Trebuchet MS",sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.lineJoin='round';
   g.lineWidth=10; g.strokeStyle=INK; g.strokeText(txt,128,34); g.fillStyle=col; g.fillText(txt,128,34);
   const t=new T.CanvasTexture(c); return popTexCache[k]=t;
 }
