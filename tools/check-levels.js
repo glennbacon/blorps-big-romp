@@ -5,8 +5,9 @@
    tested are the real ones. A search bot then plays each level: it keeps a snapshot for every spot it has managed to stand
    on, keeps trying moves from those spots, and stops when Blorp reaches the flag or beats the boss. Each level is
    played twice, as small Blorp and as big Blorp (who must not get hurt), and the bot jumps 5% lower than a player
-   can, so a pass leaves some margin. It also reports common slips, such as a monster placed in mid-air, or a
-   tree standing in front of the checkpoint flag or inside the hut after the goal.
+   can, so a pass leaves some margin. It also reports common slips, such as a monster placed in mid-air, a roof
+   low enough to hit when jumping for the flag, or a tree standing in front of the checkpoint flag or inside the
+   hut after the goal.
 
      node tools/check-levels.js              check every level
      node tools/check-levels.js 2-3 4-1      check only these levels
@@ -28,6 +29,9 @@ function harness(){
   put=function(list,model,ox,oy,oz){ if(props) props.push({model,ox,oy,oz}); return put0(list,model,ox,oy,oz); };
   const copies=a=>a.map(o=>Object.assign({},o));
   const bossOf=()=>{ for(const e of enemies) if(e.type==='boss') return e; return null; };
+  /* every block Blorp's head meets goes through bumpBlock(); keep a note of each while a jump for the flag is tried */
+  let knocks=null; const bump0=bumpBlock;
+  bumpBlock=function(tx,ty){ if(knocks) knocks.push([tx,ty]); return bump0(tx,ty); };
 
   function snap(){
     const p=Object.assign({},player); p.riding=player.riding?plats.indexOf(player.riding):-1;
@@ -109,6 +113,30 @@ function harness(){
     return {ok:false,rolls,cells:list.length,why:'stuck: furthest x '+maxX.toFixed(1)+(L.boss?', boss hp left '+far.hp:'')+' of '+L.W};
   }
 
+  /* A jump for the flag must not end on Blorp's head. From every step of the last staircase he jumps for the pole with the
+     button held, from a standstill, a walk and a full run, small and big; the real game says whether his head met anything. */
+  function headroom(idx){
+    const out=[];
+    for(const form of [0,1]){
+      start(idx,form); if(!L.goal) return out;
+      enemies=[]; /* this is about the roof, not about who is flying under it */
+      const gx=L.goal.x, base=snap(); let hit=null;
+      for(let x=gx-12;x<gx&&!hit;x++){
+        let top=-1; for(let y=0;y<H;y++){ if(solidAt(x,y)) top=y; else if(top>=0) break; }
+        if(top<2) continue; /* level ground, not a step */
+        for(const vx of [0,5.5,RUN_MAX]){
+          restore(base); player.x=x+0.5; player.y=top+1; player.vx=vx; player.vy=0; player.onGround=true;
+          input.left=false; input.right=input.run=input.jump=true; input.jumpBuf=0.11; knocks=[];
+          for(let i=0;i<120*4&&!player.goal&&!player.dead;i++){ step(STEP); if(player.onGround&&i>30) break; }
+          if(knocks.length){ hit={x,at:knocks[0]}; break; }
+        }
+      }
+      knocks=null; input.right=input.run=input.jump=false;
+      if(hit) out.push((form?'big':'small')+' Blorp hits his head at '+hit.at[0]+','+hit.at[1]+' when he jumps for the flag from the step at x '+hit.x);
+    }
+    return out;
+  }
+
   /* Mistakes that are easy to make when writing a level by hand. */
   function lint(idx){
     const L0=LEVELS[idx](), W0=L0.W, t=L0.tiles, out=[];
@@ -131,6 +159,7 @@ function harness(){
       if(W0<gx+10) out.push('level is too narrow for the hut after the flag (needs W >= '+(gx+10)+')');
       for(let x=gx-1;x<=gx+8;x++){ if(!sol(x,1)) out.push('no ground at x '+x+' around the flag'); for(let y=2;y<12;y++) if(at(x,y)!==AIR&&!(x===gx&&y===2)) out.push('tile in the way at '+x+','+y+' around the flag'); } }
     else if(!L0.boss) out.push('level has neither a flag nor a boss');
+    for(const n of headroom(idx)) out.push(n);
     if(L0.boss){ const b=L0.boss; if(!(b.x0<b.x&&b.x<b.x1)) out.push('boss starts outside its arena'); onFloor('boss',b.x,b.y); }
     /* scenery: nothing tall may stand between the camera and the checkpoint flag. The flag stands at depth CP_Z and
        spans about a tile to the right of its post; the 0.75 allows for props further back shifting sideways on screen. */
