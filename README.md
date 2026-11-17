@@ -4,11 +4,15 @@ A colorful voxel platformer with a 2.5D side-scrolling view, built with [three.j
 
 **[Play it in your browser](https://glennbacon.github.io/blorps-big-romp/)**
 
+![The title screen, Gumdrop Meadow, the stairs over the lava in Castle Crumble, and the world map](screenshot.png)
+
+It is also one of the games in [Glenn Bacon's arcade](https://glennbacon.github.io/arcade/), next to its sequel, [Blorp's Big Romp 2](https://github.com/glennbacon/blorps-big-romp2).
+
 The whole game is one HTML file. There are no image or sound files: every model is built in code from boxes, every texture is drawn on a 16×16 canvas, and all music and sound effects are synthesized with the Web Audio API.
 
 ## Play
 
-Play online at <https://glennbacon.github.io/blorps-big-romp/>.
+Play online at <https://glennbacon.github.io/blorps-big-romp/>, or in the [arcade](https://glennbacon.github.io/arcade/blorps-big-romp/).
 
 To run it from a copy of this repository, open `index.html` in a current version of Chrome, Safari, Firefox or Edge. Nothing needs installing. An internet connection is needed either way because three.js and the fonts load from CDNs.
 
@@ -101,6 +105,7 @@ The simulation runs at a fixed 120 steps per second, independent of frame rate.
 | `src/h_flow.js` | Level loading, animation, screens, the flow between map and levels, input and the main loop |
 | `src/tail.html` | Closing markup |
 | `build.sh` | Joins the pieces in `src/` into `index.html` |
+| `screenshot.png` | The picture at the top of this page |
 | `tools/check-levels.js` | Proves that every level can be finished |
 | `tools/check-map.js` | Proves the world map is sound and that its rules hold |
 | `tools/check-save.js` | Checks that progress is saved and offered back as Continue |
